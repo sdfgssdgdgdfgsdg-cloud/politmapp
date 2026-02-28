@@ -47,7 +47,6 @@
         input:checked + .slider { background: #44ff44; }
         input:checked + .slider:before { transform: translateX(16px); }
 
-        /* DEEPSTATE ANIMATION */
         @keyframes dash-move { to { stroke-dashoffset: -20; } }
         .new-territory-anim { animation: dash-move 1s linear infinite; }
 
@@ -56,6 +55,10 @@
         .pulsating-dot { width: 8px; height: 8px; background: #ff4444; border-radius: 50%; position: relative; box-shadow: 0 0 10px #ff4444; }
         .pulsating-dot::after { content: ''; position: absolute; top: 50%; left: 50%; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; border: 2px solid #ff4444; animation: pulsate 1.8s ease-out infinite; box-sizing: border-box; }
         @keyframes pulsate { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(5); opacity: 0; } }
+        
+        /* Стиль для ссылок во вкладке */
+        .link-item { text-decoration: none; color: #ccc; transition: 0.2s; }
+        .link-item:hover { color: var(--khaki); border-color: var(--khaki); }
     </style>
 </head>
 <body>
@@ -64,20 +67,19 @@
     <div class="tab-btn active" id="btn-map" onclick="toggleTab('map')"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg></div>
     <div class="tab-btn" id="btn-draw" onclick="toggleTab('draw')"><svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg></div>
     <div class="tab-btn" id="btn-don" onclick="toggleTab('don')"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg></div>
+    <div class="tab-btn" id="btn-links" onclick="toggleTab('links')"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></div>
 </div>
 
 <div id="sidebar">
     <div id="t-map" class="tab-page active">
-        <h2 style="font-size: 11px; letter-spacing: 2px; margin-bottom: 15px;">УПРАВЛЕНИЕ</h2>
-        
+        <h2 style="font-size: 11px; letter-spacing: 2px; margin-bottom: 15px;">НАСТРОЙКИ И ДАТА</h2>
         <div class="switch-group" style="flex-direction: column; align-items: flex-start;">
             <span style="margin-bottom: 8px; font-size: 11px; color: #888;">ДАТА:</span>
             <input type="text" id="calendar-trigger" readonly style="width: 100%; background: #1a1a1a; color: var(--khaki); border: 1px solid #333; padding: 10px; border-radius: 4px; cursor: pointer; text-align: center;">
         </div>
-
         <div class="switch-group" style="flex-direction: column; background: #111;">
             <div style="display: flex; justify-content: space-between; width: 100%; margin-bottom: 10px;">
-                <span id="step-label" style="font-weight: bold; color: var(--army-red);">Продвижение 1</span>
+                <span id="step-label" style="font-weight: bold; color: var(--army-red);">ШАГ 1</span>
                 <span id="date-label" style="color: #888; font-family: monospace;">--.--.--</span>
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%;">
@@ -85,18 +87,16 @@
                 <button class="tool-btn" onclick="nextStep()">ВПЕРЕД ➡</button>
             </div>
         </div>
-
         <div class="switch-group" onclick="toggleCheck('ds-mode')">
-            <span style="color: #ffffff; font-weight: bold;">Хайлайты (пока не работают)</span>
+            <span style="color: #ffffff; font-weight: bold;">Хайлайты</span>
             <label class="switch"><input type="checkbox" id="ds-mode" onchange="loadKML()"><span class="slider"></span></label>
         </div>
-
         <div class="switch-group" onclick="toggleCheck('stroke-toggle')">
-            <span>Границы</span>
+            <span>Границы фронта</span>
             <label class="switch"><input type="checkbox" id="stroke-toggle" checked onchange="loadKML()"><span class="slider"></span></label>
         </div>
         <div class="switch-group" onclick="toggleCheck('sat-in')">
-            <span>Спутник</span>
+            <span>Спутниковая карта</span>
             <label class="switch"><input type="checkbox" id="sat-in" onchange="toggleLayers()"><span class="slider"></span></label>
         </div>
     </div>
@@ -105,7 +105,7 @@
         <h2 style="font-size: 11px; letter-spacing: 2px; margin-bottom: 15px;">ИНСТРУМЕНТЫ</h2>
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px;">
             <button class="tool-btn active" id="tool-brush" onclick="setTool('brush')">Кисть</button>
-            <button class="tool-btn" id="tool-arrow" onclick="setTool('arrow')">Стрела</button>
+            <button class="tool-btn" id="tool-arrow" onclick="setTool('arrow')">Стрелка</button>
             <button class="tool-btn" id="tool-circle" onclick="setTool('circle')">Круг</button>
         </div>
         <div class="switch-group">
@@ -117,9 +117,29 @@
     </div>
 
     <div id="t-don" class="tab-page">
-        <h2 style="font-size: 11px; letter-spacing: 2px; margin-bottom: 15px;">ПОДДЕРЖКА АВТОРА Т-БАНК</h2>
+        <h2 style="font-size: 11px; letter-spacing: 2px; margin-bottom: 15px;">ПОДДЕРЖКА АВТОРА</h2>
         <div style="background: #111; padding: 15px; border-radius: 8px; text-align: center;">
             <span style="font-family: monospace; display: block; margin-bottom: 10px;">2200 7005 0856 7400</span>
+            <p style="font-size: 12px; color: #666;">Т-Банк</p>
+        </div>
+    </div>
+
+    <div id="t-links" class="tab-page">
+        <h2 style="font-size: 11px; letter-spacing: 2px; margin-bottom: 15px;">РЕСУРСЫ И ССЫЛКИ</h2>
+        <a href="https://t.me/kartaBD" target="_blank" class="switch-group link-item">
+            <span>Telegram Канал</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+        </a>
+        <a href="https://max.ru/join/KKOJbRpuF03x2nkswG_yorOpR9KWM3bKDQYv" target="_blank" class="switch-group link-item">
+            <span>MAX Канал</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+        </a>
+        <a href="https://t.me/PolitMap_Bot" target="_blank" class="switch-group link-item">
+            <span>Обратная Связь</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+        </a>
+        <div style="margin-top: 20px; padding: 10px; border: 1px dashed #333; border-radius: 6px; font-size: 11px; color: #666;">
+            Карта обновляется ежедневно на основе открытых данных.
         </div>
     </div>
 </div>
@@ -170,126 +190,77 @@
         maxStepsForDate = Math.max(1, step - 1);
     }
 
-async function loadKML() {
-    const date = availableDates[currentDateIndex];
-    const kmlUrl = `history/${date}/step${currentStep}.kml`;
-    const showStroke = document.getElementById('stroke-toggle').checked;
-    const dsMode = document.getElementById('ds-mode').checked;
+    async function loadKML() {
+        const date = availableDates[currentDateIndex];
+        if(!date) return;
+        const kmlUrl = `history/${date}/step${currentStep}.kml`;
+        const showStroke = document.getElementById('stroke-toggle').checked;
+        const dsMode = document.getElementById('ds-mode').checked;
 
-    document.getElementById('date-label').innerText = date;
-    document.getElementById('step-label').innerText = `ШАГ ${currentStep}`;
+        document.getElementById('date-label').innerText = date;
+        document.getElementById('step-label').innerText = `ШАГ ${currentStep}`;
 
-    fillGroup.clearLayers();
-    pointsGroup.clearLayers();
-    highlightGroup.clearLayers();
+        fillGroup.clearLayers();
+        pointsGroup.clearLayers();
+        highlightGroup.clearLayers();
 
-    let currentFeatures = [];
-
-    // Загружаем текущий step
-    await new Promise(resolve => {
-        omnivore.kml(kmlUrl, null, L.geoJson(null, {
-style: (f) => {
-
-    const name = (f.properties.name || "").toLowerCase();
-    let color = "#880E4F";
-
-    if (name.includes("рф") || name.includes("россия") || name.includes("вс рф"))
-        color = "#A52714";
-
-    else if (name.includes("украина") || name.includes("украина"))
-        color = "#0F9D58";
-
-    else if (name.includes("серая"))
-        color = "#FFFFFF";
-
-    return {
-        fillColor: color,
-        fillOpacity: 0.45,
-        color: showStroke ? color : null,
-        weight: showStroke ? 2 : 0,
-        interactive: true
-    };
-},
-            onEachFeature: (f, l) => {
-                if (f.properties.name) {
-                    l.bindTooltip(`<b>${f.properties.name}</b>`, {
-                        sticky: true,
-                        className: 'custom-tooltip'
-                    });
-                }
-                currentFeatures.push(f);
-            }
-        })).on('ready', function() {
-            this.eachLayer(l => {
-                if (l instanceof L.Marker) {
-                    L.marker(l.getLatLng(), {
-                        icon: L.divIcon({
-                            html: '<div class="dot-container"><div class="pulsating-dot"></div></div>',
-                            iconSize: [24,24]
-                        })
-                    }).addTo(pointsGroup);
-                } else {
-                    l.addTo(fillGroup);
-                }
-            });
-            resolve();
-        });
-    });
-
-    // 🔥 DEEPSTATE ЛОГИКА
-    if (dsMode && currentStep > 1) {
-
-        const prevUrl = `history/${date}/step${currentStep - 1}.kml`;
-
-        let prevFeatures = [];
+        let currentFeatures = [];
 
         await new Promise(resolve => {
-            omnivore.kml(prevUrl).on('ready', function() {
+            omnivore.kml(kmlUrl, null, L.geoJson(null, {
+                style: (f) => {
+                    const name = (f.properties.name || "").toLowerCase();
+                    let color = "#880E4F";
+                    if (name.includes("рф") || name.includes("россия") || name.includes("вс рф")) color = "#A52714";
+                    else if (name.includes("украина")) color = "#0F9D58";
+                    else if (name.includes("серая")) color = "#FFFFFF";
+                    return { fillColor: color, fillOpacity: 0.45, color: showStroke ? color : null, weight: showStroke ? 2 : 0, interactive: true };
+                },
+                onEachFeature: (f, l) => {
+                    if (f.properties.name) l.bindTooltip(`<b>${f.properties.name}</b>`, { sticky: true, className: 'custom-tooltip' });
+                    currentFeatures.push(f);
+                }
+            })).on('ready', function() {
                 this.eachLayer(l => {
-                    if (l.feature && l.feature.geometry) {
-                        prevFeatures.push(l.feature);
-                    }
+                    if (l instanceof L.Marker) {
+                        L.marker(l.getLatLng(), { icon: L.divIcon({ html: '<div class="dot-container"><div class="pulsating-dot"></div></div>', iconSize: [24,24] }) }).addTo(pointsGroup);
+                    } else { l.addTo(fillGroup); }
                 });
                 resolve();
             });
         });
 
-        if (currentFeatures.length && prevFeatures.length) {
-
-            const currentUnion = turf.union(...currentFeatures.map(f => turf.feature(f.geometry)));
-            const prevUnion = turf.union(...prevFeatures.map(f => turf.feature(f.geometry)));
-
-            if (currentUnion && prevUnion) {
-                const diff = turf.difference(currentUnion, prevUnion);
-
-                if (diff) {
-                    L.geoJSON(diff, {
-                        style: {
-                            fillColor: "##FFFFFF",
-                            fillOpacity: 0.3,
-                            color: "#FFFFFF",
-                            weight: 2,
-                            dashArray: "5,10"
+        if (dsMode && currentStep > 1) {
+            const prevUrl = `history/${date}/step${currentStep - 1}.kml`;
+            let prevFeatures = [];
+            await new Promise(resolve => {
+                omnivore.kml(prevUrl).on('ready', function() {
+                    this.eachLayer(l => { if (l.feature && l.feature.geometry) prevFeatures.push(l.feature); });
+                    resolve();
+                });
+            });
+            if (currentFeatures.length && prevFeatures.length) {
+                try {
+                    const currentUnion = turf.union(...currentFeatures.map(f => turf.feature(f.geometry)));
+                    const prevUnion = turf.union(...prevFeatures.map(f => turf.feature(f.geometry)));
+                    if (currentUnion && prevUnion) {
+                        const diff = turf.difference(currentUnion, prevUnion);
+                        if (diff) {
+                            L.geoJSON(diff, { style: { fillColor: "#FFFFFF", fillOpacity: 0.3, color: "#FFFFFF", weight: 2, dashArray: "5,10" } })
+                            .on('add', function(e){ if (e.target._path) e.target._path.classList.add('new-territory-anim'); })
+                            .addTo(highlightGroup);
                         }
-                    }).on('add', function(e){
-                        if (e.target._path)
-                            e.target._path.classList.add('new-territory-anim');
-                    }).addTo(highlightGroup);
-                }
+                    }
+                } catch(e) { console.warn("Turf error:", e); }
             }
         }
     }
-}
 
-    // РИСОВАНИЕ
     const canvas = document.getElementById('paint-canvas');
     const ctx = canvas.getContext('2d');
     let drawing = false, currentTool = 'brush', snapshot, startX, startY;
 
-    function resizeCanvas() {
-        canvas.width = canvas.offsetWidth;
-        canvas.height = canvas.offsetHeight;
-    }
+    function resizeCanvas() { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; }
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
@@ -297,11 +268,11 @@ style: (f) => {
         const active = canvas.classList.toggle('active');
         const btn = document.getElementById('draw-btn');
         if (active) {
-            btn.innerText = "ВЫКЛЮЧИТЬ"; btn.style.background = "#44ff44";
+            btn.innerText = "Выкл."; btn.style.background = "#44ff44";
             map.dragging.disable(); map.touchZoom.disable(); map.scrollWheelZoom.disable();
             resizeCanvas();
         } else {
-            btn.innerText = "ВКЛЮЧИТЬ РИСОВАНИЕ"; btn.style.background = "";
+            btn.innerText = "Вкл."; btn.style.background = "";
             map.dragging.enable(); map.touchZoom.enable(); map.scrollWheelZoom.enable();
         }
     }
@@ -349,16 +320,21 @@ style: (f) => {
     }
 
     function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+
     function toggleTab(id) {
         const sidebar = document.getElementById('sidebar');
         const btn = document.getElementById('btn-' + id);
+        const page = document.getElementById('t-' + id);
+        
         if (btn.classList.contains('active') && !sidebar.classList.contains('collapsed')) {
-            sidebar.classList.add('collapsed'); btn.classList.remove('active');
+            sidebar.classList.add('collapsed'); 
+            btn.classList.remove('active');
         } else {
             sidebar.classList.remove('collapsed');
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.tab-page').forEach(p => p.classList.remove('active'));
-            btn.classList.add('active'); document.getElementById('t-' + id).classList.add('active');
+            btn.classList.add('active'); 
+            page.classList.add('active');
         }
         setTimeout(() => map.invalidateSize(), 300);
     }
