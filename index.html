@@ -152,7 +152,8 @@
 <script>
     const dark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png');
     const esri = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { crossOrigin: true });
-
+    const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { opacity: 0.4, crossOrigin: true });
+    
     const map = L.map('map', { zoomControl: false, attributionControl: false, layers: [dark] }).setView([48.3, 37.5], 7);
     const fillGroup = L.layerGroup().addTo(map); 
     const pointsGroup = L.layerGroup().addTo(map);
@@ -357,5 +358,6 @@
 </script>
 </body>
 </html>
+
 
 
