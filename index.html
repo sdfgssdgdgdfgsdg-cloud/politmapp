@@ -150,7 +150,7 @@
 </div>
 
 <script>
-    const light = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png');
+    const dark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png');
     const esri = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { crossOrigin: true });
 
     const map = L.map('map', { zoomControl: false, attributionControl: false, layers: [dark] }).setView([48.3, 37.5], 7);
@@ -357,4 +357,5 @@
 </script>
 </body>
 </html>
+
 
