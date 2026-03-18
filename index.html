@@ -47,21 +47,14 @@
         input:checked + .slider { background: #44ff44; }
         input:checked + .slider:before { transform: translateX(16px); }
 
-        @keyframes dash-move { to { stroke-dashoffset: -20; } }
-        .new-territory-anim { animation: dash-move 1s linear infinite; }
-
         .custom-tooltip { background: #000 !important; border: 1px solid var(--khaki) !important; color: #fff !important; font-size: 11px; padding: 4px 8px; }
         .dot-container { display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; }
         .pulsating-dot { width: 8px; height: 8px; background: #ff4444; border-radius: 50%; position: relative; box-shadow: 0 0 10px #ff4444; }
-        .pulsating-dot::after { content: ''; position: absolute; top: 50%; left: 50%; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; border: 2px solid #ff4444; animation: pulsate 1.8s ease-out infinite; box-sizing: border-box; }
-        @keyframes pulsate { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(5); opacity: 0; } }
         
-        .link-item { text-decoration: none; color: #ccc; transition: 0.2s; }
-        .link-item:hover { color: var(--khaki); border-color: var(--khaki); }
-
-        /* Стиль для ползунка */
         input[type=range] { -webkit-appearance: none; background: #333; height: 4px; border-radius: 2px; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 14px; width: 14px; border-radius: 50%; background: var(--khaki); cursor: pointer; }
+
+        .measure-output { background: #111; border: 1px solid #333; padding: 10px; border-radius: 4px; color: var(--khaki); font-family: monospace; font-size: 12px; margin-top: 10px; word-break: break-all; }
     </style>
 </head>
 <body>
@@ -69,6 +62,17 @@
 <div id="tab-bar">
     <div class="tab-btn active" id="btn-map" onclick="toggleTab('map')"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg></div>
     <div class="tab-btn" id="btn-draw" onclick="toggleTab('draw')"><svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg></div>
+    
+    <div class="tab-btn" id="btn-measure" onclick="toggleTab('measure')">
+        <svg viewBox="0 0 24 24">
+            <rect x="2" y="7" width="20" height="10" rx="1"></rect>
+            <line x1="6" y1="7" x2="6" y2="11"></line>
+            <line x1="10" y1="7" x2="10" y2="13"></line>
+            <line x1="14" y1="7" x2="14" y2="11"></line>
+            <line x1="18" y1="7" x2="18" y2="13"></line>
+        </svg>
+    </div>
+    
     <div class="tab-btn" id="btn-don" onclick="toggleTab('don')"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg></div>
     <div class="tab-btn" id="btn-links" onclick="toggleTab('links')"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></div>
 </div>
@@ -90,10 +94,6 @@
                 <button class="tool-btn" onclick="nextStep()">ВПЕРЕД ➡</button>
             </div>
         </div>
-        <div class="switch-group" onclick="toggleCheck('ds-mode')">
-            <span style="color: #ffffff; font-weight: bold;">Хайлайты (Не работают)</span>
-            <label class="switch"><input type="checkbox" id="ds-mode" onchange="loadKML()"><span class="slider"></span></label>
-        </div>
         <div class="switch-group" onclick="toggleCheck('stroke-toggle')">
             <span>Границы фронта</span>
             <label class="switch"><input type="checkbox" id="stroke-toggle" checked onchange="loadKML()"><span class="slider"></span></label>
@@ -105,13 +105,12 @@
     </div>
 
     <div id="t-draw" class="tab-page">
-        <h2 style="font-size: 11px; letter-spacing: 2px; margin-bottom: 15px;">ИНСТРУМЕНТЫ</h2>
+        <h2 style="font-size: 11px; letter-spacing: 2px; margin-bottom: 15px;">ИНСТРУМЕНТЫ РИСОВАНИЯ</h2>
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-bottom: 10px;">
             <button class="tool-btn active" id="tool-brush" onclick="setTool('brush')">Кисть</button>
             <button class="tool-btn" id="tool-arrow" onclick="setTool('arrow')">Стрелка</button>
             <button class="tool-btn" id="tool-circle" onclick="setTool('circle')">Круг</button>
         </div>
-        
         <div class="switch-group" style="flex-direction: column; align-items: stretch; gap: 10px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <span style="font-size: 10px; color: #888;">ЦВЕТ И РАЗМЕР:</span>
@@ -122,10 +121,19 @@
                 <input type="range" id="brush-size" min="1" max="30" value="3" style="flex-grow: 1;">
             </div>
         </div>
-
         <button class="tool-btn main-action" id="draw-btn" onclick="togglePaint()">Включить рисование</button>
         <button class="tool-btn" onclick="clearCanvas()">Очистить</button>
         <button class="tool-btn" onclick="takeScreenshot()">Скриншот</button>
+    </div>
+
+    <div id="t-measure" class="tab-page">
+        <h2 style="font-size: 11px; letter-spacing: 2px; margin-bottom: 15px;">ИЗМЕРЕНИЯ</h2>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <button class="tool-btn" id="m-tool-dist" onclick="setMeasureTool('distance')">Линейка</button>
+            <button class="tool-btn" id="m-tool-coord" onclick="setMeasureTool('coords')">Точка</button>
+        </div>
+        <div id="measure-result" class="measure-output">Выберите инструмент и кликните на карту</div>
+        <button class="tool-btn" style="margin-top: 15px;" onclick="clearMeasurements()">Сбросить</button>
     </div>
 
     <div id="t-don" class="tab-page">
@@ -137,18 +145,11 @@
     </div>
 
     <div id="t-links" class="tab-page">
-        <h2 style="font-size: 11px; letter-spacing: 2px; margin-bottom: 15px;">РЕСУРСЫ И ССЫЛКИ</h2>
+        <h2 style="font-size: 11px; letter-spacing: 2px; margin-bottom: 15px;">РЕСУРСЫ</h2>
         <a href="https://t.me/kartaBD" target="_blank" class="switch-group link-item">
             <span>Telegram Канал</span>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
         </a>
-        <a href="https://t.me/PolitMap_Bot" target="_blank" class="switch-group link-item">
-            <span>Обратная Связь</span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-        </a>
-        <div style="margin-top: 20px; padding: 10px; border: 1px dashed #333; border-radius: 6px; font-size: 11px; color: #666;">
-            Карта обновляется ежедневно на основе открытых данных.
-        </div>
     </div>
 </div>
 
@@ -165,10 +166,88 @@
     const map = L.map('map', { zoomControl: false, attributionControl: false, layers: [dark] }).setView([48.3, 37.5], 7);
     const fillGroup = L.layerGroup().addTo(map); 
     const pointsGroup = L.layerGroup().addTo(map);
-    const highlightGroup = L.layerGroup().addTo(map);
+    const measureLayer = L.layerGroup().addTo(map);
 
     let availableDates = [], currentDateIndex = 0, currentStep = 1, maxStepsForDate = 1, fp;
 
+    // --- ЛОГИКА ИЗМЕРЕНИЙ ---
+    let activeMeasureTool = null;
+    let measurePoints = [];
+    let isFinished = false;
+    let measurePolyline = L.polyline([], {color: '#c2b280', weight: 3, dashArray: '5, 10'}).addTo(measureLayer);
+
+    function setMeasureTool(tool) {
+        if (canvas.classList.contains('active')) togglePaint();
+        
+        if (activeMeasureTool !== tool) {
+            clearMeasurements();
+        }
+        
+        activeMeasureTool = (activeMeasureTool === tool) ? null : tool;
+        
+        document.querySelectorAll('#t-measure .tool-btn').forEach(b => b.classList.remove('active'));
+        if (activeMeasureTool) {
+            document.getElementById('m-tool-' + (tool === 'distance' ? 'dist' : 'coord')).classList.add('active');
+            map.getContainer().style.cursor = 'crosshair';
+        } else {
+            map.getContainer().style.cursor = '';
+        }
+    }
+
+    map.on('click', (e) => {
+        if (!activeMeasureTool) return;
+
+        if (activeMeasureTool === 'coords') {
+            const lat = e.latlng.lat.toFixed(6);
+            const lng = e.latlng.lng.toFixed(6);
+            document.getElementById('measure-result').innerHTML = `Широта: ${lat}<br>Долгота: ${lng}`;
+            L.circleMarker(e.latlng, { radius: 5, color: 'var(--khaki)' }).addTo(measureLayer)
+                .bindTooltip(`${lat}, ${lng}`, {permanent: true, className: 'custom-tooltip'}).openTooltip();
+        } 
+        else if (activeMeasureTool === 'distance') {
+            if (isFinished) {
+                clearMeasurements();
+                isFinished = false;
+            }
+
+            const lastPoint = measurePoints[measurePoints.length - 1];
+            const newPoint = [e.latlng.lng, e.latlng.lat];
+
+            if (lastPoint && lastPoint[0] === newPoint[0] && lastPoint[1] === newPoint[1]) {
+                isFinished = true;
+                measurePolyline.setStyle({dashArray: null, color: '#44ff44'});
+                document.getElementById('measure-result').innerHTML += "<br><b style='color:#44ff44;'>ЗАВЕРШЕНО</b>";
+                return;
+            }
+
+            measurePoints.push(newPoint);
+            measurePolyline.addLatLng(e.latlng);
+            
+            L.circleMarker(e.latlng, { 
+                radius: 4, 
+                color: 'var(--army-red)', 
+                fillColor: '#fff', 
+                fillOpacity: 1,
+                interactive: true 
+            }).addTo(measureLayer);
+
+            if (measurePoints.length > 1) {
+                const line = turf.lineString(measurePoints);
+                const length = turf.length(line, {units: 'kilometers'}).toFixed(2);
+                document.getElementById('measure-result').innerHTML = `Расстояние: ${length} км<br>Точек: ${measurePoints.length}<br><span style="font-size:9px; color:#666;">Кликните на последнюю точку для фиксации</span>`;
+            }
+        }
+    });
+
+    function clearMeasurements() {
+        measureLayer.clearLayers();
+        measurePoints = [];
+        isFinished = false;
+        measurePolyline = L.polyline([], {color: '#c2b280', weight: 3, dashArray: '5, 10'}).addTo(measureLayer);
+        document.getElementById('measure-result').innerHTML = "Выберите инструмент и кликните на карту";
+    }
+
+    // --- СТАНДАРТНЫЕ ФУНКЦИИ КАРТЫ ---
     async function initApp() {
         try {
             const res = await fetch('dates.json?t=' + Date.now());
@@ -203,84 +282,49 @@
         if(!date) return;
         const kmlUrl = `history/${date}/step${currentStep}.kml`;
         const showStroke = document.getElementById('stroke-toggle').checked;
-        const dsMode = document.getElementById('ds-mode').checked;
 
         document.getElementById('date-label').innerText = date;
         document.getElementById('step-label').innerText = `ШАГ ${currentStep}`;
 
         fillGroup.clearLayers();
         pointsGroup.clearLayers();
-        highlightGroup.clearLayers();
 
-        let currentFeatures = [];
-
-        await new Promise(resolve => {
-            omnivore.kml(kmlUrl, null, L.geoJson(null, {
-                style: (f) => {
-                    const name = (f.properties.name || "").toLowerCase();
-                    let color = "#880E4F";
-                    if (name.includes("рф") || name.includes("россия") || name.includes("вс рф")) color = "#A52714";
-                    else if (name.includes("украина")) color = "#0288D1";
-                    else if (name.includes("серая")) color = "#FFFFFF";
-                    return { fillColor: color, fillOpacity: 0.45, color: showStroke ? color : null, weight: showStroke ? 2 : 0, interactive: true };
-                },
-                onEachFeature: (f, l) => {
-                    if (f.properties.name) l.bindTooltip(`<b>${f.properties.name}</b>`, { sticky: true, className: 'custom-tooltip' });
-                    currentFeatures.push(f);
-                }
-            })).on('ready', function() {
-                this.eachLayer(l => {
-                    if (l instanceof L.Marker) {
-                        L.marker(l.getLatLng(), { icon: L.divIcon({ html: '<div class="dot-container"><div class="pulsating-dot"></div></div>', iconSize: [24,24] }) }).addTo(pointsGroup);
-                    } else { l.addTo(fillGroup); }
-                });
-                resolve();
+        omnivore.kml(kmlUrl, null, L.geoJson(null, {
+            style: (f) => {
+                const name = (f.properties.name || "").toLowerCase();
+                let color = "#880E4F";
+                if (name.includes("рф") || name.includes("россия") || name.includes("вс рф")) color = "#A52714";
+                else if (name.includes("украина")) color = "#0288D1";
+                else if (name.includes("серая")) color = "#FFFFFF";
+                return { fillColor: color, fillOpacity: 0.45, color: showStroke ? color : null, weight: showStroke ? 2 : 0, interactive: true };
+            },
+            onEachFeature: (f, l) => {
+                if (f.properties.name) l.bindTooltip(`<b>${f.properties.name}</b>`, { sticky: true, className: 'custom-tooltip' });
+            }
+        })).on('ready', function() {
+            this.eachLayer(l => {
+                if (l instanceof L.Marker) {
+                    L.marker(l.getLatLng(), { icon: L.divIcon({ html: '<div class="dot-container"><div class="pulsating-dot"></div></div>', iconSize: [24,24] }) }).addTo(pointsGroup);
+                } else { l.addTo(fillGroup); }
             });
         });
-
-        if (dsMode && currentStep > 1) {
-            const prevUrl = `history/${date}/step${currentStep - 1}.kml`;
-            let prevFeatures = [];
-            await new Promise(resolve => {
-                omnivore.kml(prevUrl).on('ready', function() {
-                    this.eachLayer(l => { if (l.feature && l.feature.geometry) prevFeatures.push(l.feature); });
-                    resolve();
-                });
-            });
-            if (currentFeatures.length && prevFeatures.length) {
-                try {
-                    const currentUnion = turf.union(...currentFeatures.map(f => turf.feature(f.geometry)));
-                    const prevUnion = turf.union(...prevFeatures.map(f => turf.feature(f.geometry)));
-                    if (currentUnion && prevUnion) {
-                        const diff = turf.difference(currentUnion, prevUnion);
-                        if (diff) {
-                            L.geoJSON(diff, { style: { fillColor: "#FFFFFF", fillOpacity: 0.3, color: "#FFFFFF", weight: 2, dashArray: "5,10" } })
-                            .on('add', function(e){ if (e.target._path) e.target._path.classList.add('new-territory-anim'); })
-                            .addTo(highlightGroup);
-                        }
-                    }
-                } catch(e) { console.warn("Turf error:", e); }
-            }
-        }
     }
 
-    // ЛОГИКА РИСОВАНИЯ
+    // --- ЛОГИКА РИСОВАНИЯ ---
     const canvas = document.getElementById('paint-canvas');
     const ctx = canvas.getContext('2d');
     const sizeInput = document.getElementById('brush-size');
     const sizeLabel = document.getElementById('brush-size-val');
     let drawing = false, currentTool = 'brush', snapshot, startX, startY;
 
-    // Обновление отображения размера
-    sizeInput.addEventListener('input', () => {
-        sizeLabel.innerText = sizeInput.value + 'px';
-    });
+    sizeInput.addEventListener('input', () => { sizeLabel.innerText = sizeInput.value + 'px'; });
 
     function resizeCanvas() { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; }
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
     function togglePaint() {
+        if (activeMeasureTool) setMeasureTool(null);
         const active = canvas.classList.toggle('active');
         const btn = document.getElementById('draw-btn');
         if (active) {
@@ -304,12 +348,9 @@
         drawing = true;
         const rect = canvas.getBoundingClientRect();
         startX = e.clientX - rect.left; startY = e.clientY - rect.top;
-        
         ctx.strokeStyle = document.getElementById('m-color').value;
-        ctx.lineWidth = sizeInput.value; // Используем значение из ползунка
+        ctx.lineWidth = sizeInput.value;
         ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        
         snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
         if (currentTool === 'brush') { ctx.beginPath(); ctx.moveTo(startX, startY); }
     });
@@ -324,7 +365,7 @@
             if (currentTool === 'circle') ctx.arc(startX, startY, Math.sqrt((x-startX)**2 + (y-startY)**2), 0, Math.PI*2);
             else if (currentTool === 'arrow') {
                 const angle = Math.atan2(y - startY, x - startX);
-                const headLen = sizeInput.value * 4; // Размер стрелки зависит от толщины
+                const headLen = sizeInput.value * 4;
                 ctx.moveTo(startX, startY); ctx.lineTo(x, y);
                 ctx.lineTo(x-headLen*Math.cos(angle-0.5), y-headLen*Math.sin(angle-0.5));
                 ctx.moveTo(x, y); ctx.lineTo(x-headLen*Math.cos(angle+0.5), y-headLen*Math.sin(angle+0.5));
@@ -379,4 +420,3 @@
 </script>
 </body>
 </html>
-
