@@ -61,6 +61,13 @@
         .layer-preview { width: 36px; height: 36px; border-radius: 4px; flex-shrink: 0; border: 1px solid #333; }
         .layer-check { margin-left: auto; color: var(--khaki); opacity: 0; font-size: 14px; }
         .layer-option.active .layer-check { opacity: 1; }
+
+        @keyframes highlightPulse {
+            0%   { opacity: 0.7; }
+            50%  { opacity: 0.15; }
+            100% { opacity: 0.7; }
+        }
+        .highlight-layer { animation: highlightPulse 2s ease-in-out infinite; }
     </style>
 </head>
 <body>
@@ -106,6 +113,10 @@
         <div class="switch-group" onclick="toggleCheck('stroke-toggle')">
             <span>Границы фронта</span>
             <label class="switch"><input type="checkbox" id="stroke-toggle" checked onchange="loadKML()"><span class="slider"></span></label>
+        </div>
+        <div class="switch-group" onclick="toggleCheck('highlight-toggle')">
+            <span>Хайлайты продвижений</span>
+            <label class="switch"><input type="checkbox" id="highlight-toggle" checked onchange="updateHighlights()"><span class="slider"></span></label>
         </div>
     </div>
 
@@ -218,6 +229,7 @@
     let currentBaseLayer = baseLayers['carto-dark'];
     const map = L.map('map', { zoomControl: false, attributionControl: false, layers: [currentBaseLayer] }).setView([48.3, 37.5], 7);
     const fillGroup = L.layerGroup().addTo(map); 
+    const highlightGroup = L.layerGroup().addTo(map);
     const pointsGroup = L.layerGroup().addTo(map);
     const measureLayer = L.layerGroup().addTo(map);
 
@@ -330,6 +342,115 @@
         maxStepsForDate = Math.max(1, step - 1);
     }
 
+    // --- ХАЙЛАЙТЫ ---
+    let prevGeoJSON = null;
+    let currentGeoJSON = null;
+
+    function kmlLayerToGeoJSON(layer) {
+        const features = [];
+        layer.eachLayer(l => {
+            if (l.toGeoJSON) {
+                const gj = l.toGeoJSON();
+                if (gj.geometry && (gj.geometry.type === 'Polygon' || gj.geometry.type === 'MultiPolygon')) {
+                    features.push(gj);
+                }
+            }
+        });
+        return turf.featureCollection(features);
+    }
+
+    function mergeFeaturesByName(fc, namePart) {
+        const filtered = fc.features.filter(f => {
+            const n = (f.properties.name || '').toLowerCase();
+            return n.includes(namePart);
+        });
+        if (filtered.length === 0) return null;
+        try {
+            let merged = filtered[0];
+            for (let i = 1; i < filtered.length; i++) {
+                try { merged = turf.union(merged, filtered[i]); } catch(e) {}
+            }
+            return merged;
+        } catch(e) { return null; }
+    }
+
+    function updateHighlights() {
+        highlightGroup.clearLayers();
+        if (!document.getElementById('highlight-toggle').checked) return;
+        if (!prevGeoJSON || !currentGeoJSON) return;
+
+        const sides = [
+            { namePart: 'рф',      color: '#FF6600' },
+            { namePart: 'россия',  color: '#FF6600' },
+            { namePart: 'вс рф',   color: '#FF6600' },
+            { namePart: 'украина', color: '#00BFFF' },
+        ];
+
+        const colorMap = {};
+        currentGeoJSON.features.forEach(f => {
+            const n = (f.properties.name || '').toLowerCase();
+            if (n.includes('рф') || n.includes('россия') || n.includes('вс рф')) colorMap[f.properties.name] = '#FF6600';
+            else if (n.includes('украина')) colorMap[f.properties.name] = '#00BFFF';
+        });
+
+        // Merge prev and current by side
+        const groups = [
+            { names: ['рф','россия','вс рф'], color: '#FF6600' },
+            { names: ['украина'],             color: '#00BFFF' },
+        ];
+
+        groups.forEach(({ names, color }) => {
+            const prevFiltered = prevGeoJSON.features.filter(f => {
+                const n = (f.properties.name || '').toLowerCase();
+                return names.some(k => n.includes(k));
+            });
+            const currFiltered = currentGeoJSON.features.filter(f => {
+                const n = (f.properties.name || '').toLowerCase();
+                return names.some(k => n.includes(k));
+            });
+
+            if (prevFiltered.length === 0 || currFiltered.length === 0) return;
+
+            try {
+                let prevMerged = prevFiltered[0];
+                for (let i = 1; i < prevFiltered.length; i++) {
+                    try { prevMerged = turf.union(prevMerged, prevFiltered[i]); } catch(e) {}
+                }
+                let currMerged = currFiltered[0];
+                for (let i = 1; i < currFiltered.length; i++) {
+                    try { currMerged = turf.union(currMerged, currFiltered[i]); } catch(e) {}
+                }
+
+                const diff = turf.difference(currMerged, prevMerged);
+                if (!diff) return;
+
+                const hlLayer = L.geoJSON(diff, {
+                    style: {
+                        fillColor: 'transparent',
+                        fillOpacity: 0,
+                        color: color,
+                        weight: 3,
+                        opacity: 1,
+                    }
+                });
+
+                // Apply pulsating class to each path element
+                hlLayer.on('add', function() {
+                    hlLayer.eachLayer(l => {
+                        if (l._path) l._path.classList.add('highlight-layer');
+                    });
+                });
+
+                hlLayer.addTo(highlightGroup);
+                // Apply after add
+                hlLayer.eachLayer(l => {
+                    if (l._path) l._path.classList.add('highlight-layer');
+                });
+
+            } catch(e) { console.warn('Highlight error:', e); }
+        });
+    }
+
     async function loadKML() {
         const date = availableDates[currentDateIndex];
         if (!date) return;
@@ -339,10 +460,31 @@
         document.getElementById('date-label').innerText = date;
         document.getElementById('step-label').innerText = `ШАГ ${currentStep}`;
 
+        // Загружаем предыдущий шаг для хайлайтов
+        let prevUrl = null;
+        if (currentStep > 1) {
+            prevUrl = `history/${date}/step${currentStep - 1}.kml`;
+        } else if (currentDateIndex > 0) {
+            const prevDate = availableDates[currentDateIndex - 1];
+            // Найдём последний шаг предыдущей даты
+            let s = 1;
+            while (s < 15) {
+                try {
+                    const r = await fetch(`history/${prevDate}/step${s}.kml`, { method: 'HEAD' });
+                    if (r.ok) s++; else break;
+                } catch { break; }
+            }
+            if (s > 1) prevUrl = `history/${prevDate}/step${s - 1}.kml`;
+        }
+
         fillGroup.clearLayers();
         pointsGroup.clearLayers();
+        highlightGroup.clearLayers();
+        prevGeoJSON = null;
+        currentGeoJSON = null;
 
-        omnivore.kml(kmlUrl, null, L.geoJson(null, {
+        // Загружаем текущий KML
+        const currentLayer = omnivore.kml(kmlUrl, null, L.geoJson(null, {
             style: (f) => {
                 const name = (f.properties.name || "").toLowerCase();
                 let color = "#880E4F";
@@ -354,12 +496,25 @@
             onEachFeature: (f, l) => {
                 if (f.properties.name) l.bindPopup(`<b>${f.properties.name}</b>`);
             }
-        })).on('ready', function() {
+        }));
+
+        currentLayer.on('ready', function() {
             this.eachLayer(l => {
                 if (l instanceof L.Marker) {
                     L.marker(l.getLatLng(), { icon: L.divIcon({ html: '<div class="dot-container"><div class="pulsating-dot"></div></div>', iconSize: [24,24] }) }).addTo(pointsGroup);
                 } else { l.addTo(fillGroup); }
             });
+            currentGeoJSON = kmlLayerToGeoJSON(this);
+
+            // Загружаем предыдущий KML если есть
+            if (prevUrl) {
+                const prevLayer = omnivore.kml(prevUrl, null, L.geoJson(null, {}));
+                prevLayer.on('ready', function() {
+                    prevGeoJSON = kmlLayerToGeoJSON(this);
+                    updateHighlights();
+                });
+                prevLayer.on('error', () => updateHighlights());
+            }
         });
     }
 
