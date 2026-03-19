@@ -47,7 +47,6 @@
         input:checked + .slider { background: #44ff44; }
         input:checked + .slider:before { transform: translateX(16px); }
 
-        .custom-tooltip { background: #000 !important; border: 1px solid var(--khaki) !important; color: #fff !important; font-size: 11px; padding: 4px 8px; }
         .dot-container { display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; }
         .pulsating-dot { width: 8px; height: 8px; background: #ff4444; border-radius: 50%; position: relative; box-shadow: 0 0 10px #ff4444; }
         
@@ -55,6 +54,13 @@
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 14px; width: 14px; border-radius: 50%; background: var(--khaki); cursor: pointer; }
 
         .measure-output { background: #111; border: 1px solid #333; padding: 10px; border-radius: 4px; color: var(--khaki); font-family: monospace; font-size: 12px; margin-top: 10px; word-break: break-all; }
+
+        .layer-option { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #151515; border: 1px solid #222; border-radius: 6px; cursor: pointer; font-size: 13px; transition: 0.2s; }
+        .layer-option:hover { border-color: #444; }
+        .layer-option.active { border-color: var(--khaki); background: #1a1e16; color: #fff; }
+        .layer-preview { width: 36px; height: 36px; border-radius: 4px; flex-shrink: 0; border: 1px solid #333; }
+        .layer-check { margin-left: auto; color: var(--khaki); opacity: 0; font-size: 14px; }
+        .layer-option.active .layer-check { opacity: 1; }
     </style>
 </head>
 <body>
@@ -74,6 +80,9 @@
     </div>
     
     <div class="tab-btn" id="btn-don" onclick="toggleTab('don')"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg></div>
+    <div class="tab-btn" id="btn-layers" onclick="toggleTab('layers')">
+        <svg viewBox="0 0 24 24"><path d="M9 20l-5-2V4l5 2m0 14l6-2m-6 2V6m6 12l5 2V6l-5-2m0 14V4M9 6l6-2"></path></svg>
+    </div>
     <div class="tab-btn" id="btn-links" onclick="toggleTab('links')"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></div>
 </div>
 
@@ -97,10 +106,6 @@
         <div class="switch-group" onclick="toggleCheck('stroke-toggle')">
             <span>Границы фронта</span>
             <label class="switch"><input type="checkbox" id="stroke-toggle" checked onchange="loadKML()"><span class="slider"></span></label>
-        </div>
-        <div class="switch-group" onclick="toggleCheck('sat-in')">
-            <span>Белая карта</span>
-            <label class="switch"><input type="checkbox" id="sat-in" onchange="toggleLayers()"><span class="slider"></span></label>
         </div>
     </div>
 
@@ -136,6 +141,47 @@
         <button class="tool-btn" style="margin-top: 15px;" onclick="clearMeasurements()">Сбросить</button>
     </div>
 
+    <div id="t-layers" class="tab-page">
+        <h2 style="font-size: 11px; letter-spacing: 2px; margin-bottom: 15px;">ПОДЛОЖКА КАРТЫ</h2>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div id="layer-carto-dark" class="layer-option active" onclick="setBaseLayer('carto-dark')">
+                <div class="layer-preview" style="background: linear-gradient(135deg, #111 50%, #222 50%);"></div>
+                <span>CartoDB Dark</span>
+                <div class="layer-check">✓</div>
+            </div>
+            <div id="layer-carto-light" class="layer-option" onclick="setBaseLayer('carto-light')">
+                <div class="layer-preview" style="background: linear-gradient(135deg, #e8e8e8 50%, #d0d0d0 50%);"></div>
+                <span>CartoDB Positron</span>
+                <div class="layer-check">✓</div>
+            </div>
+            <div id="layer-esri" class="layer-option" onclick="setBaseLayer('esri')">
+                <div class="layer-preview" style="background: linear-gradient(135deg, #4a6741 50%, #6b8f5e 50%);"></div>
+                <span>ESRI Satellite</span>
+                <div class="layer-check">✓</div>
+            </div>
+            <div id="layer-google-hybrid" class="layer-option" onclick="setBaseLayer('google-hybrid')">
+                <div class="layer-preview" style="background: linear-gradient(135deg, #3a5a3a 50%, #5a7a4a 50%);"></div>
+                <span>Google Hybrid</span>
+                <div class="layer-check">✓</div>
+            </div>
+            <div id="layer-google-satellite" class="layer-option" onclick="setBaseLayer('google-satellite')">
+                <div class="layer-preview" style="background: linear-gradient(135deg, #2a4a2a 50%, #1a3a1a 50%);"></div>
+                <span>Google Satellite</span>
+                <div class="layer-check">✓</div>
+            </div>
+            <div id="layer-osm" class="layer-option" onclick="setBaseLayer('osm')">
+                <div class="layer-preview" style="background: linear-gradient(135deg, #c8dfc8 50%, #a8c8a8 50%);"></div>
+                <span>OSM Map</span>
+                <div class="layer-check">✓</div>
+            </div>
+            <div id="layer-maptiler" class="layer-option" onclick="setBaseLayer('maptiler')">
+                <div class="layer-preview" style="background: linear-gradient(135deg, #b8c8d8 50%, #98a8c8 50%);"></div>
+                <span>Google Roadmap</span>
+                <div class="layer-check">✓</div>
+            </div>
+        </div>
+    </div>
+
     <div id="t-don" class="tab-page">
         <h2 style="font-size: 11px; letter-spacing: 2px; margin-bottom: 15px;">ПОДДЕРЖКА АВТОРА</h2>
         <div style="background: #111; padding: 15px; border-radius: 8px; text-align: center;">
@@ -146,7 +192,7 @@
 
     <div id="t-links" class="tab-page">
         <h2 style="font-size: 11px; letter-spacing: 2px; margin-bottom: 15px;">РЕСУРСЫ</h2>
-        <a href="https://t.me/kartaBD" target="_blank" class="switch-group link-item">
+        <a href="https://t.me/kartaBD" target="_blank" class="switch-group link-item" style="color: #fff; text-decoration: none;">
             <span>Telegram Канал</span>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
         </a>
@@ -159,11 +205,18 @@
 </div>
 
 <script>
-    const dark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png');
-    const esri = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { crossOrigin: true });
-    const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { opacity: 1, crossOrigin: true });
-    
-    const map = L.map('map', { zoomControl: false, attributionControl: false, layers: [dark] }).setView([48.3, 37.5], 7);
+    const baseLayers = {
+        'carto-dark':      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'),
+        'carto-light':     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'),
+        'esri':            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'),
+        'google-hybrid':   L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}'),
+        'google-satellite':L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}'),
+        'osm':             L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png'),
+        'maptiler':        L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}'),
+    };
+
+    let currentBaseLayer = baseLayers['carto-dark'];
+    const map = L.map('map', { zoomControl: false, attributionControl: false, layers: [currentBaseLayer] }).setView([48.3, 37.5], 7);
     const fillGroup = L.layerGroup().addTo(map); 
     const pointsGroup = L.layerGroup().addTo(map);
     const measureLayer = L.layerGroup().addTo(map);
@@ -201,8 +254,8 @@
             const lat = e.latlng.lat.toFixed(6);
             const lng = e.latlng.lng.toFixed(6);
             document.getElementById('measure-result').innerHTML = `Широта: ${lat}<br>Долгота: ${lng}`;
-            L.circleMarker(e.latlng, { radius: 5, color: 'var(--khaki)' }).addTo(measureLayer)
-                .bindTooltip(`${lat}, ${lng}`, {permanent: true, className: 'custom-tooltip'}).openTooltip();
+            L.circleMarker(e.latlng, { radius: 5, color: '#c2b280' }).addTo(measureLayer)
+                .bindTooltip(`${lat}, ${lng}`, {permanent: true}).openTooltip();
         } 
         else if (activeMeasureTool === 'distance') {
             if (isFinished) {
@@ -225,7 +278,7 @@
             
             L.circleMarker(e.latlng, { 
                 radius: 4, 
-                color: 'var(--army-red)', 
+                color: '#8b0000', 
                 fillColor: '#fff', 
                 fillOpacity: 1,
                 interactive: true 
@@ -279,7 +332,7 @@
 
     async function loadKML() {
         const date = availableDates[currentDateIndex];
-        if(!date) return;
+        if (!date) return;
         const kmlUrl = `history/${date}/step${currentStep}.kml`;
         const showStroke = document.getElementById('stroke-toggle').checked;
 
@@ -299,7 +352,7 @@
                 return { fillColor: color, fillOpacity: 0.45, color: showStroke ? color : null, weight: showStroke ? 2 : 0, interactive: true };
             },
             onEachFeature: (f, l) => {
-                if (f.properties.name) l.bindTooltip(`<b>${f.properties.name}</b>`, { sticky: true, className: 'custom-tooltip' });
+                if (f.properties.name) l.bindPopup(`<b>${f.properties.name}</b>`);
             }
         })).on('ready', function() {
             this.eachLayer(l => {
@@ -409,10 +462,13 @@
         if (currentStep > 1) { currentStep--; loadKML(); }
         else if (currentDateIndex > 0) { currentDateIndex--; await detectStepsForDate(availableDates[currentDateIndex]); currentStep = maxStepsForDate; fp.setDate(availableDates[currentDateIndex]); loadKML(); }
     }
-    function toggleLayers() {
-        const isSat = document.getElementById('sat-in').checked;
-        if(isSat) { map.removeLayer(dark); map.addLayer(esri); map.addLayer(osmLayer); } 
-        else { map.removeLayer(esri); map.removeLayer(osmLayer); map.addLayer(dark); }
+    function setBaseLayer(id) {
+        map.removeLayer(currentBaseLayer);
+        currentBaseLayer = baseLayers[id];
+        map.addLayer(currentBaseLayer);
+        currentBaseLayer.bringToBack();
+        document.querySelectorAll('.layer-option').forEach(el => el.classList.remove('active'));
+        document.getElementById('layer-' + id).classList.add('active');
     }
     function toggleCheck(id) { const el = document.getElementById(id); el.checked = !el.checked; el.dispatchEvent(new Event('change')); }
 
@@ -420,3 +476,4 @@
 </script>
 </body>
 </html>
+
