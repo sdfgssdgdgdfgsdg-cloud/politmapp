@@ -69,10 +69,6 @@
         }
         .highlight-layer { animation: highlightPulse 2s ease-in-out infinite; }
 
-        /* Плавная загрузка карты */
-        #map-overlay { position: absolute; inset: 0; background: #050505; z-index: 9000; pointer-events: none; transition: opacity 0.4s ease; }
-        #map-overlay.hidden { opacity: 0; }
-
         /* Таймлапс */
         #timelapse-bar { position: absolute; bottom: 0; left: 0; right: 0; z-index: 9997; background: rgba(10,10,10,0.88); border-top: 1px solid #222; padding: 8px 14px; display: none; align-items: center; gap: 10px; }
         #timelapse-bar.visible { display: flex; }
@@ -248,7 +244,6 @@
 <div id="map-wrap">
     <canvas id="paint-canvas"></canvas>
     <div id="map"></div>
-    <div id="map-overlay"></div>
 
     <div id="timelapse-bar">
         <button id="tl-play" onclick="toggleTimelapse()">▶</button>
@@ -390,7 +385,7 @@
             updateTlLabel(slider.value);
 
             loadKML();
-        } catch (e) { console.error(e); hideOverlay(); }
+        } catch (e) { console.error(e); }
     }
 
     async function detectStepsForDate(date) {
@@ -522,8 +517,6 @@
         document.getElementById('date-label').innerText = date;
         document.getElementById('step-label').innerText = `ШАГ ${currentStep}`;
 
-        showOverlay();
-
         // Загружаем предыдущий шаг для хайлайтов
         let prevUrl = null;
         if (currentStep > 1) {
@@ -569,7 +562,6 @@
                 } else { l.addTo(fillGroup); }
             });
             currentGeoJSON = kmlLayerToGeoJSON(this);
-            hideOverlay();
 
             // Загружаем предыдущий KML если есть
             if (prevUrl) {
@@ -706,10 +698,6 @@
             resultEl.innerText = display_name.split(',').slice(0, 2).join(',');
         } catch(e) { resultEl.innerText = 'Ошибка поиска'; }
     }
-
-    // --- ПЛАВНАЯ ЗАГРУЗКА ---
-    function showOverlay() { document.getElementById('map-overlay').classList.remove('hidden'); }
-    function hideOverlay() { setTimeout(() => document.getElementById('map-overlay').classList.add('hidden'), 80); }
 
     // --- ТАЙМЛАПС ---
     let tlPlaying = false, tlTimer = null, tlSpeed = 1000;
