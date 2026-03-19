@@ -206,8 +206,11 @@
     // pointer-events: none на нём делает их полностью некликабельными,
     // клики летят напрямую в map.on('click'), попапы не открываются.
     function setMapLayersInteractive(enabled) {
-        const overlayPane = map.getPane('overlayPane');
-        if (overlayPane) overlayPane.style.pointerEvents = enabled ? '' : 'none';
+        const val = enabled ? '' : 'none';
+        ['overlayPane', 'markerPane', 'shadowPane', 'tooltipPane', 'popupPane'].forEach(p => {
+            const pane = map.getPane(p);
+            if (pane) pane.style.pointerEvents = val;
+        });
         if (!enabled) map.closePopup();
     }
 
@@ -230,6 +233,7 @@
             document.getElementById('m-tool-' + (tool === 'distance' ? 'dist' : 'coord')).classList.add('active');
             map.getContainer().style.cursor = 'crosshair';
             setMapLayersInteractive(false);
+            map.closePopup();
             map.dragging.disable();
             map.touchZoom.disable();
             map.scrollWheelZoom.disable();
