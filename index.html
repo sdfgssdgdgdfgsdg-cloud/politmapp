@@ -235,6 +235,18 @@
 
     let availableDates = [], currentDateIndex = 0, currentStep = 1, maxStepsForDate = 1, fp;
 
+    // --- БЛОКИРОВКА ПОПАПОВ ПРИ ИЗМЕРЕНИИ ---
+    // Отключает pointer-events на overlayPane (SVG с полигонами) и markerPane
+    function setMapLayersInteractive(enabled) {
+        const overlayPane = map.getPane('overlayPane');
+        const markerPane  = map.getPane('markerPane');
+        const shadowPane  = map.getPane('shadowPane');
+        const val = enabled ? '' : 'none';
+        if (overlayPane) overlayPane.style.pointerEvents = val;
+        if (markerPane)  markerPane.style.pointerEvents  = val;
+        if (shadowPane)  shadowPane.style.pointerEvents  = val;
+    }
+
     // --- ЛОГИКА ИЗМЕРЕНИЙ ---
     let activeMeasureTool = null;
     let measurePoints = [];
@@ -251,11 +263,14 @@
         activeMeasureTool = (activeMeasureTool === tool) ? null : tool;
         
         document.querySelectorAll('#t-measure .tool-btn').forEach(b => b.classList.remove('active'));
+
         if (activeMeasureTool) {
             document.getElementById('m-tool-' + (tool === 'distance' ? 'dist' : 'coord')).classList.add('active');
             map.getContainer().style.cursor = 'crosshair';
+            setMapLayersInteractive(false); // заморозить полигоны
         } else {
             map.getContainer().style.cursor = '';
+            setMapLayersInteractive(true);  // разморозить полигоны
         }
     }
 
@@ -293,7 +308,7 @@
                 color: '#8b0000', 
                 fillColor: '#fff', 
                 fillOpacity: 1,
-                interactive: true 
+                interactive: false
             }).addTo(measureLayer);
 
             if (measurePoints.length > 1) {
@@ -310,6 +325,10 @@
         isFinished = false;
         measurePolyline = L.polyline([], {color: '#c2b280', weight: 3, dashArray: '5, 10'}).addTo(measureLayer);
         document.getElementById('measure-result').innerHTML = "Выберите инструмент и кликните на карту";
+        // Восстанавливаем интерактивность только если инструмент не активен
+        if (!activeMeasureTool) {
+            setMapLayersInteractive(true);
+        }
     }
 
     // --- СТАНДАРТНЫЕ ФУНКЦИИ КАРТЫ ---
@@ -359,41 +378,11 @@
         return turf.featureCollection(features);
     }
 
-    function mergeFeaturesByName(fc, namePart) {
-        const filtered = fc.features.filter(f => {
-            const n = (f.properties.name || '').toLowerCase();
-            return n.includes(namePart);
-        });
-        if (filtered.length === 0) return null;
-        try {
-            let merged = filtered[0];
-            for (let i = 1; i < filtered.length; i++) {
-                try { merged = turf.union(merged, filtered[i]); } catch(e) {}
-            }
-            return merged;
-        } catch(e) { return null; }
-    }
-
     function updateHighlights() {
         highlightGroup.clearLayers();
         if (!document.getElementById('highlight-toggle').checked) return;
         if (!prevGeoJSON || !currentGeoJSON) return;
 
-        const sides = [
-            { namePart: 'рф',      color: '#FF6600' },
-            { namePart: 'россия',  color: '#FF6600' },
-            { namePart: 'вс рф',   color: '#FF6600' },
-            { namePart: 'украина', color: '#00BFFF' },
-        ];
-
-        const colorMap = {};
-        currentGeoJSON.features.forEach(f => {
-            const n = (f.properties.name || '').toLowerCase();
-            if (n.includes('рф') || n.includes('россия') || n.includes('вс рф')) colorMap[f.properties.name] = '#FF6600';
-            else if (n.includes('украина')) colorMap[f.properties.name] = '#00BFFF';
-        });
-
-        // Merge prev and current by side
         const groups = [
             { names: ['рф','россия','вс рф'], color: '#FF6600' },
             { names: ['украина'],             color: '#00BFFF' },
@@ -434,7 +423,6 @@
                     }
                 });
 
-                // Apply pulsating class to each path element
                 hlLayer.on('add', function() {
                     hlLayer.eachLayer(l => {
                         if (l._path) l._path.classList.add('highlight-layer');
@@ -442,7 +430,6 @@
                 });
 
                 hlLayer.addTo(highlightGroup);
-                // Apply after add
                 hlLayer.eachLayer(l => {
                     if (l._path) l._path.classList.add('highlight-layer');
                 });
@@ -460,13 +447,11 @@
         document.getElementById('date-label').innerText = date;
         document.getElementById('step-label').innerText = `ШАГ ${currentStep}`;
 
-        // Загружаем предыдущий шаг для хайлайтов
         let prevUrl = null;
         if (currentStep > 1) {
             prevUrl = `history/${date}/step${currentStep - 1}.kml`;
         } else if (currentDateIndex > 0) {
             const prevDate = availableDates[currentDateIndex - 1];
-            // Найдём последний шаг предыдущей даты
             let s = 1;
             while (s < 15) {
                 try {
@@ -483,7 +468,6 @@
         prevGeoJSON = null;
         currentGeoJSON = null;
 
-        // Загружаем текущий KML
         const currentLayer = omnivore.kml(kmlUrl, null, L.geoJson(null, {
             style: (f) => {
                 const name = (f.properties.name || "").toLowerCase();
@@ -506,7 +490,11 @@
             });
             currentGeoJSON = kmlLayerToGeoJSON(this);
 
-            // Загружаем предыдущий KML если есть
+            // После загрузки — если инструмент измерения активен, снова блокируем
+            if (activeMeasureTool) {
+                setMapLayersInteractive(false);
+            }
+
             if (prevUrl) {
                 const prevLayer = omnivore.kml(prevUrl, null, L.geoJson(null, {}));
                 prevLayer.on('ready', function() {
@@ -532,7 +520,9 @@
     resizeCanvas();
 
     function togglePaint() {
+        // Если активен инструмент измерения — сначала выключаем его
         if (activeMeasureTool) setMeasureTool(null);
+
         const active = canvas.classList.toggle('active');
         const btn = document.getElementById('draw-btn');
         if (active) {
