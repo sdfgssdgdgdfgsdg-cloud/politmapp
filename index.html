@@ -523,7 +523,6 @@
             prevUrl = `history/${date}/step${currentStep - 1}.kml`;
         } else if (currentDateIndex > 0) {
             const prevDate = availableDates[currentDateIndex - 1];
-            // Найдём последний шаг предыдущей даты
             let s = 1;
             while (s < 15) {
                 try {
@@ -534,13 +533,13 @@
             if (s > 1) prevUrl = `history/${prevDate}/step${s - 1}.kml`;
         }
 
-        fillGroup.clearLayers();
-        pointsGroup.clearLayers();
-        highlightGroup.clearLayers();
         prevGeoJSON = null;
         currentGeoJSON = null;
 
-        // Загружаем текущий KML
+        // Загружаем новый KML, очищаем старые слои только после готовности
+        const newFill = L.layerGroup();
+        const newPoints = L.layerGroup();
+
         const currentLayer = omnivore.kml(kmlUrl, null, L.geoJson(null, {
             style: (f) => {
                 const name = (f.properties.name || "").toLowerCase();
@@ -558,12 +557,21 @@
         currentLayer.on('ready', function() {
             this.eachLayer(l => {
                 if (l instanceof L.Marker) {
-                    L.marker(l.getLatLng(), { icon: L.divIcon({ html: '<div class="dot-container"><div class="pulsating-dot"></div></div>', iconSize: [24,24] }) }).addTo(pointsGroup);
-                } else { l.addTo(fillGroup); }
+                    L.marker(l.getLatLng(), { icon: L.divIcon({ html: '<div class="dot-container"><div class="pulsating-dot"></div></div>', iconSize: [24,24] }) }).addTo(newPoints);
+                } else {
+                    l.addTo(newFill);
+                }
             });
+
+            // Атомарно заменяем старые слои новыми
+            fillGroup.clearLayers();
+            pointsGroup.clearLayers();
+            highlightGroup.clearLayers();
+            newFill.eachLayer(l => l.addTo(fillGroup));
+            newPoints.eachLayer(l => l.addTo(pointsGroup));
+
             currentGeoJSON = kmlLayerToGeoJSON(this);
 
-            // Загружаем предыдущий KML если есть
             if (prevUrl) {
                 const prevLayer = omnivore.kml(prevUrl, null, L.geoJson(null, {}));
                 prevLayer.on('ready', function() {
@@ -572,6 +580,10 @@
                 });
                 prevLayer.on('error', () => updateHighlights());
             }
+        });
+
+        currentLayer.on('error', function(e) {
+            console.error('KML load error:', e);
         });
     }
 
@@ -791,11 +803,6 @@
     }
 
     function tlSpeedChange(val) { tlSpeed = parseInt(val); }
-
-    initApp();
-</script>
-</body>
-</html>
 
     initApp();
 </script>
