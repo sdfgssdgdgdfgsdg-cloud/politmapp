@@ -50,6 +50,16 @@
         .layer-preview { width: 36px; height: 36px; border-radius: 4px; flex-shrink: 0; border: 1px solid #333; }
         .layer-check { margin-left: auto; color: var(--khaki); opacity: 0; font-size: 14px; }
         .layer-option.active .layer-check { opacity: 1; }
+        /* Блокировка кликов по полигонам во время измерения */
+        .measure-active .leaflet-overlay-pane,
+        .measure-active .leaflet-overlay-pane svg,
+        .measure-active .leaflet-overlay-pane path,
+        .measure-active .leaflet-marker-pane,
+        .measure-active .leaflet-tooltip-pane,
+        .measure-active .leaflet-popup-pane {
+            pointer-events: none !important;
+        }
+
         @keyframes highlightPulse { 0% { opacity: 0.7; } 50% { opacity: 0.15; } 100% { opacity: 0.7; } }
         .highlight-layer { animation: highlightPulse 2s ease-in-out infinite; }
     </style>
@@ -207,10 +217,14 @@
     // клики летят напрямую в map.on('click'), попапы не открываются.
     function setMapLayersInteractive(enabled) {
         const val = enabled ? '' : 'none';
+        // Блокируем ВСЕ панели Leaflet кроме measureLayer
         ['overlayPane', 'markerPane', 'shadowPane', 'tooltipPane', 'popupPane'].forEach(p => {
             const pane = map.getPane(p);
             if (pane) pane.style.pointerEvents = val;
         });
+        // Дополнительно — напрямую на SVG внутри overlayPane
+        const svg = map.getPane('overlayPane') && map.getPane('overlayPane').querySelector('svg');
+        if (svg) svg.style.pointerEvents = val;
         if (!enabled) map.closePopup();
     }
 
@@ -233,6 +247,7 @@
             document.getElementById('m-tool-' + (tool === 'distance' ? 'dist' : 'coord')).classList.add('active');
             map.getContainer().style.cursor = 'crosshair';
             setMapLayersInteractive(false);
+            map.getContainer().classList.add('measure-active');
             map.closePopup();
             map.dragging.disable();
             map.touchZoom.disable();
@@ -242,6 +257,7 @@
         } else {
             map.getContainer().style.cursor = '';
             setMapLayersInteractive(true);
+            map.getContainer().classList.remove('measure-active');
             map.dragging.enable();
             map.touchZoom.enable();
             map.scrollWheelZoom.enable();
