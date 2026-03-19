@@ -63,19 +63,11 @@
         .layer-option.active .layer-check { opacity: 1; }
 
         @keyframes highlightPulse {
-            0%   { opacity: 1; }
-            50%  { opacity: 0.3; }
-            100% { opacity: 1; }
+            0%   { opacity: 0.7; }
+            50%  { opacity: 0.15; }
+            100% { opacity: 0.7; }
         }
-        .highlight-layer { animation: highlightPulse 1.8s ease-in-out infinite; }
-
-        /* Таймлапс */
-        #timelapse-bar { position: absolute; bottom: 0; left: 0; right: 0; z-index: 9997; background: rgba(10,10,10,0.88); border-top: 1px solid #222; padding: 8px 14px; display: none; align-items: center; gap: 10px; }
-        #timelapse-bar.visible { display: flex; }
-        #tl-play { background: var(--army-red); border: none; color: #fff; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 14px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-        #tl-slider { flex-grow: 1; }
-        #tl-label { font-size: 11px; color: var(--khaki); font-family: monospace; white-space: nowrap; min-width: 80px; }
-        #tl-speed { background: #1a1a1a; border: 1px solid #333; color: #888; padding: 4px 6px; border-radius: 4px; font-size: 10px; cursor: pointer; }
+        .highlight-layer { animation: highlightPulse 2s ease-in-out infinite; }
     </style>
 </head>
 <body>
@@ -104,9 +96,6 @@
 <div id="sidebar">
     <div id="t-map" class="tab-page active">
         <h2 style="font-size: 11px; letter-spacing: 2px; margin-bottom: 15px;">НАСТРОЙКИ И ДАТА</h2>
-
-        <!-- Поиск города — используй поле поиска на карте (правый верхний угол) -->
-
         <div class="switch-group" style="flex-direction: column; align-items: flex-start;">
             <span style="margin-bottom: 8px; font-size: 11px; color: #888;">ДАТА:</span>
             <input type="text" id="calendar-trigger" readonly style="width: 100%; background: #1a1a1a; color: var(--khaki); border: 1px solid #333; padding: 10px; border-radius: 4px; cursor: pointer; text-align: center;">
@@ -121,7 +110,6 @@
                 <button class="tool-btn" onclick="nextStep()">ВПЕРЕД ➡</button>
             </div>
         </div>
-
         <div class="switch-group" onclick="toggleCheck('stroke-toggle')">
             <span>Границы фронта</span>
             <label class="switch"><input type="checkbox" id="stroke-toggle" checked onchange="loadKML()"><span class="slider"></span></label>
@@ -129,25 +117,6 @@
         <div class="switch-group" onclick="toggleCheck('highlight-toggle')">
             <span>Хайлайты продвижений</span>
             <label class="switch"><input type="checkbox" id="highlight-toggle" checked onchange="updateHighlights()"><span class="slider"></span></label>
-        </div>
-        <div class="switch-group" style="flex-direction: column; align-items: flex-start; gap: 8px; cursor: default;">
-            <span style="font-size: 11px; color: #888;">ПОИСК ГОРОДА:</span>
-            <div style="display: flex; gap: 6px; width: 100%;">
-                <input type="text" id="city-search" placeholder="Введите город..." onkeydown="if(event.key==='Enter') searchCity()" style="flex-grow: 1; background: #1a1a1a; color: #ccc; border: 1px solid #333; padding: 8px; border-radius: 4px; font-size: 12px;">
-                <button onclick="searchCity()" style="padding: 8px 12px; background: #1a1e16; border: 1px solid var(--khaki); color: var(--khaki); border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold;">→</button>
-            </div>
-            <div id="search-result" style="font-size: 11px; color: #888;"></div>
-        </div>
-        <button class="tool-btn" id="tl-btn" onclick="toggleTimelapseBar()" style="margin-top:12px;">▶ ТАЙМЛАПС</button>
-        <div class="switch-group" style="flex-direction: column; align-items: flex-start; gap: 8px; cursor: default; margin-top: 8px;">
-            <div style="display: flex; justify-content: space-between; width: 100%;">
-                <span style="font-size: 11px; color: #888;">СКОРОСТЬ:</span>
-                <span id="tl-speed-val" style="font-size: 11px; color: var(--khaki); font-family: monospace;">1.0с</span>
-            </div>
-            <input type="range" id="tl-speed" min="1" max="10" value="5" style="width: 100%;" oninput="updateTlSpeed()">
-            <div style="display: flex; justify-content: space-between; width: 100%; font-size: 10px; color: #555;">
-                <span>Быстро</span><span>Медленно</span>
-            </div>
         </div>
     </div>
 
@@ -244,18 +213,6 @@
 <div id="map-wrap">
     <canvas id="paint-canvas"></canvas>
     <div id="map"></div>
-
-    <div id="timelapse-bar">
-        <button id="tl-play" onclick="toggleTimelapse()">▶</button>
-        <input type="range" id="tl-slider" min="0" value="0" oninput="onSliderInput(this.value)">
-        <span id="tl-label">--.--.----</span>
-        <select id="tl-speed" onchange="tlSpeedChange(this.value)">
-            <option value="1200">0.5x</option>
-            <option value="800" selected>1x</option>
-            <option value="400">2x</option>
-            <option value="200">4x</option>
-        </select>
-    </div>
 </div>
 
 <script>
@@ -357,11 +314,6 @@
 
     // --- СТАНДАРТНЫЕ ФУНКЦИИ КАРТЫ ---
     async function initApp() {
-        // Показываем оверлей сразу, скроем после первой загрузки
-        document.getElementById('map-overlay').classList.remove('hidden');
-        // Показываем таймлапс-бар сразу
-        document.getElementById('timelapse-bar').classList.add('visible');
-
         try {
             const res = await fetch('dates.json?t=' + Date.now());
             availableDates = await res.json();
@@ -375,15 +327,6 @@
 
             await detectStepsForDate(lastDate);
             currentStep = maxStepsForDate;
-
-            // Инициализируем слайдер таймлапса
-            buildTlSteps();
-            const slider = document.getElementById('tl-slider');
-            slider.max = tlAllSteps.length - 1;
-            const cur = tlAllSteps.findIndex(s => s.date === lastDate && s.step === currentStep);
-            slider.value = cur >= 0 ? cur : tlAllSteps.length - 1;
-            updateTlLabel(slider.value);
-
             loadKML();
         } catch (e) { console.error(e); }
     }
@@ -486,30 +429,22 @@
                         fillColor: 'transparent',
                         fillOpacity: 0,
                         color: color,
-                        weight: 4,
+                        weight: 3,
                         opacity: 1,
-                        dashArray: null,
-                        lineCap: 'round',
-                        lineJoin: 'round',
                     }
                 });
 
-                // Apply pulsating class and glow to each path element
+                // Apply pulsating class to each path element
                 hlLayer.on('add', function() {
                     hlLayer.eachLayer(l => {
-                        if (l._path) {
-                            l._path.classList.add('highlight-layer');
-                            l._path.style.filter = `drop-shadow(0 0 6px ${color}) drop-shadow(0 0 12px ${color})`;
-                        }
+                        if (l._path) l._path.classList.add('highlight-layer');
                     });
                 });
 
                 hlLayer.addTo(highlightGroup);
+                // Apply after add
                 hlLayer.eachLayer(l => {
-                    if (l._path) {
-                        l._path.classList.add('highlight-layer');
-                        l._path.style.filter = `drop-shadow(0 0 6px ${color}) drop-shadow(0 0 12px ${color})`;
-                    }
+                    if (l._path) l._path.classList.add('highlight-layer');
                 });
 
             } catch(e) { console.warn('Highlight error:', e); }
@@ -525,12 +460,13 @@
         document.getElementById('date-label').innerText = date;
         document.getElementById('step-label').innerText = `ШАГ ${currentStep}`;
 
-        // Предыдущий шаг для хайлайтов
+        // Загружаем предыдущий шаг для хайлайтов
         let prevUrl = null;
         if (currentStep > 1) {
             prevUrl = `history/${date}/step${currentStep - 1}.kml`;
         } else if (currentDateIndex > 0) {
             const prevDate = availableDates[currentDateIndex - 1];
+            // Найдём последний шаг предыдущей даты
             let s = 1;
             while (s < 15) {
                 try {
@@ -547,7 +483,8 @@
         prevGeoJSON = null;
         currentGeoJSON = null;
 
-        const customLayer = L.geoJson(null, {
+        // Загружаем текущий KML
+        const currentLayer = omnivore.kml(kmlUrl, null, L.geoJson(null, {
             style: (f) => {
                 const name = (f.properties.name || "").toLowerCase();
                 let color = "#880E4F";
@@ -559,34 +496,25 @@
             onEachFeature: (f, l) => {
                 if (f.properties.name) l.bindPopup(`<b>${f.properties.name}</b>`);
             }
-        });
-
-        const currentLayer = omnivore.kml(kmlUrl, null, customLayer);
+        }));
 
         currentLayer.on('ready', function() {
-            customLayer.eachLayer(l => {
+            this.eachLayer(l => {
                 if (l instanceof L.Marker) {
                     L.marker(l.getLatLng(), { icon: L.divIcon({ html: '<div class="dot-container"><div class="pulsating-dot"></div></div>', iconSize: [24,24] }) }).addTo(pointsGroup);
-                } else {
-                    l.addTo(fillGroup);
-                }
+                } else { l.addTo(fillGroup); }
             });
+            currentGeoJSON = kmlLayerToGeoJSON(this);
 
-            currentGeoJSON = kmlLayerToGeoJSON(customLayer);
-
+            // Загружаем предыдущий KML если есть
             if (prevUrl) {
-                const prevCustom = L.geoJson(null, {});
-                const prevLayer = omnivore.kml(prevUrl, null, prevCustom);
+                const prevLayer = omnivore.kml(prevUrl, null, L.geoJson(null, {}));
                 prevLayer.on('ready', function() {
-                    prevGeoJSON = kmlLayerToGeoJSON(prevCustom);
+                    prevGeoJSON = kmlLayerToGeoJSON(this);
                     updateHighlights();
                 });
                 prevLayer.on('error', () => updateHighlights());
             }
-        });
-
-        currentLayer.on('error', function(e) {
-            console.error('KML load error:', e);
         });
     }
 
@@ -699,115 +627,8 @@
     }
     function toggleCheck(id) { const el = document.getElementById(id); el.checked = !el.checked; el.dispatchEvent(new Event('change')); }
 
-    async function searchCity() {
-        const query = document.getElementById('city-search').value.trim();
-        const resultEl = document.getElementById('search-result');
-        if (!query) return;
-        resultEl.innerText = 'Поиск...';
-        try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`);
-            const data = await res.json();
-            if (data.length === 0) { resultEl.innerText = 'Не найдено'; return; }
-            const { lat, lon, display_name } = data[0];
-            map.setView([parseFloat(lat), parseFloat(lon)], 12);
-            resultEl.innerText = display_name.split(',').slice(0, 2).join(',');
-        } catch(e) { resultEl.innerText = 'Ошибка поиска'; }
-    }
-
-    // --- ТАЙМЛАПС ---
-    let tlPlaying = false, tlTimer = null, tlSpeed = 1000;
-    let tlAllSteps = []; // [{date, step}]
-
-    function updateTlSpeed() {
-        const val = parseInt(document.getElementById('tl-speed').value);
-        // val 1=быстро(200ms) .. 10=медленно(3000ms)
-        tlSpeed = Math.round(200 + (val - 1) * (3000 - 200) / 9);
-        const sec = (tlSpeed / 1000).toFixed(1);
-        document.getElementById('tl-speed-val').innerText = sec + 'с';
-    }
-
-    function buildTlSteps() {
-        tlAllSteps = [];
-        availableDates.forEach(date => {
-            for (let s = 1; s <= 14; s++) tlAllSteps.push({date, step: s});
-        });
-    }
-
-    function toggleTimelapseBar() {
-        const bar = document.getElementById('timelapse-bar');
-        const visible = bar.classList.toggle('visible');
-        document.getElementById('tl-btn').innerText = visible ? '■ ТАЙМЛАПС' : '▶ ТАЙМЛАПС';
-        if (visible) {
-            buildTlSteps();
-            // Найти текущий индекс
-            const cur = tlAllSteps.findIndex(s => s.date === availableDates[currentDateIndex] && s.step === currentStep);
-            const slider = document.getElementById('tl-slider');
-            slider.max = tlAllSteps.length - 1;
-            slider.value = cur >= 0 ? cur : 0;
-            updateTlLabel(slider.value);
-        } else {
-            stopTimelapse();
-        }
-    }
-
-    function toggleTimelapse() {
-        tlPlaying ? stopTimelapse() : startTimelapse();
-    }
-
-    function startTimelapse() {
-        tlPlaying = true;
-        document.getElementById('tl-play').innerText = '⏸';
-        advanceTimelapse();
-    }
-
-    function stopTimelapse() {
-        tlPlaying = false;
-        document.getElementById('tl-play').innerText = '▶';
-        clearTimeout(tlTimer);
-    }
-
-    async function advanceTimelapse() {
-        if (!tlPlaying) return;
-        const slider = document.getElementById('tl-slider');
-        let idx = parseInt(slider.value);
-        if (idx >= tlAllSteps.length - 1) { stopTimelapse(); slider.value = 0; return; }
-        idx++;
-        slider.value = idx;
-        await goToTlStep(idx);
-        tlTimer = setTimeout(advanceTimelapse, tlSpeed);
-    }
-
-    async function goToTlStep(idx) {
-        const { date, step } = tlAllSteps[idx];
-        // Проверить существует ли шаг
-        try {
-            const r = await fetch(`history/${date}/step${step}.kml`, { method: 'HEAD' });
-            if (!r.ok) {
-                if (tlPlaying) { advanceTimelapse(); return; }
-                return;
-            }
-        } catch { if (tlPlaying) { advanceTimelapse(); return; } return; }
-
-        currentDateIndex = availableDates.indexOf(date);
-        currentStep = step;
-        fp.setDate(date);
-        updateTlLabel(idx);
-        await loadKML();
-    }
-
-    function onSliderInput(val) {
-        stopTimelapse();
-        goToTlStep(parseInt(val));
-    }
-
-    function updateTlLabel(idx) {
-        const { date, step } = tlAllSteps[idx] || {};
-        document.getElementById('tl-label').innerText = date ? `${date} ш.${step}` : '--';
-    }
-
-    function tlSpeedChange(val) { tlSpeed = parseInt(val); }
-
     initApp();
 </script>
 </body>
 </html>
+
