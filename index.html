@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>PolitMap карта СВО</title>
-    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
@@ -14,82 +13,56 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
-
     <style>
         :root { --army-red: #8b0000; --khaki: #c2b280; --sidebar-bg: #0d0d0d; }
         * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
         body { background: #000; font-family: 'Segoe UI', sans-serif; display: flex; height: 100vh; overflow: hidden; color: #ccc; }
-
         #tab-bar { width: 60px; min-width: 60px; background: #111; border-right: 1px solid #222; display: flex; flex-direction: column; align-items: center; padding-top: 20px; z-index: 10005; }
         .tab-btn { width: 44px; height: 44px; color: #444; display: flex; align-items: center; justify-content: center; cursor: pointer; margin-bottom: 20px; border-radius: 8px; transition: 0.2s; }
         .tab-btn.active { color: var(--khaki); background: #1a1e16; border: 1px solid #3b4634; }
         .tab-btn svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; }
-
         #sidebar { width: 300px; background: var(--sidebar-bg); border-right: 1px solid #222; z-index: 10004; transition: 0.3s; position: relative; overflow: hidden; }
         #sidebar.collapsed { width: 0; border-right: none; }
         .tab-page { display: none; padding: 20px; width: 300px; height: 100%; overflow-y: auto; }
         .tab-page.active { display: block; }
-
         .switch-group { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #151515; border-radius: 6px; margin-bottom: 8px; border: 1px solid #222; font-size: 13px; cursor: pointer; }
         .tool-btn { width: 100%; padding: 10px; background: #1a1a1a; border: 1px solid #333; color: #888; cursor: pointer; border-radius: 4px; font-weight: bold; margin-top: 8px; text-transform: uppercase; font-size: 10px; }
         .tool-btn.active { border-color: var(--khaki); color: #fff; background: #1a1e16; }
         .main-action { background: var(--army-red) !important; color: #fff !important; border: none !important; margin-top: 15px; }
-        
         #map-wrap { position: relative; flex-grow: 1; height: 100%; overflow: hidden; }
         #map { height: 100%; width: 100%; z-index: 10; background: #050505; }
         #paint-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; pointer-events: none; }
         #paint-canvas.active { pointer-events: auto; cursor: crosshair; }
-
         .switch { position: relative; width: 34px; height: 18px; pointer-events: none; }
         .switch input { display: none; }
         .slider { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #333; border-radius: 20px; transition: 0.4s; }
         .slider:before { content: ""; position: absolute; height: 12px; width: 12px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.4s; }
         input:checked + .slider { background: #44ff44; }
         input:checked + .slider:before { transform: translateX(16px); }
-
         .dot-container { display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; }
         .pulsating-dot { width: 8px; height: 8px; background: #ff4444; border-radius: 50%; position: relative; box-shadow: 0 0 10px #ff4444; }
-        
         input[type=range] { -webkit-appearance: none; background: #333; height: 4px; border-radius: 2px; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 14px; width: 14px; border-radius: 50%; background: var(--khaki); cursor: pointer; }
-
         .measure-output { background: #111; border: 1px solid #333; padding: 10px; border-radius: 4px; color: var(--khaki); font-family: monospace; font-size: 12px; margin-top: 10px; word-break: break-all; }
-
         .layer-option { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #151515; border: 1px solid #222; border-radius: 6px; cursor: pointer; font-size: 13px; transition: 0.2s; }
         .layer-option:hover { border-color: #444; }
         .layer-option.active { border-color: var(--khaki); background: #1a1e16; color: #fff; }
         .layer-preview { width: 36px; height: 36px; border-radius: 4px; flex-shrink: 0; border: 1px solid #333; }
         .layer-check { margin-left: auto; color: var(--khaki); opacity: 0; font-size: 14px; }
         .layer-option.active .layer-check { opacity: 1; }
-
-        @keyframes highlightPulse {
-            0%   { opacity: 0.7; }
-            50%  { opacity: 0.15; }
-            100% { opacity: 0.7; }
-        }
+        @keyframes highlightPulse { 0% { opacity: 0.7; } 50% { opacity: 0.15; } 100% { opacity: 0.7; } }
         .highlight-layer { animation: highlightPulse 2s ease-in-out infinite; }
     </style>
 </head>
 <body>
-
 <div id="tab-bar">
     <div class="tab-btn active" id="btn-map" onclick="toggleTab('map')"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg></div>
     <div class="tab-btn" id="btn-draw" onclick="toggleTab('draw')"><svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg></div>
-    
     <div class="tab-btn" id="btn-measure" onclick="toggleTab('measure')">
-        <svg viewBox="0 0 24 24">
-            <rect x="2" y="7" width="20" height="10" rx="1"></rect>
-            <line x1="6" y1="7" x2="6" y2="11"></line>
-            <line x1="10" y1="7" x2="10" y2="13"></line>
-            <line x1="14" y1="7" x2="14" y2="11"></line>
-            <line x1="18" y1="7" x2="18" y2="13"></line>
-        </svg>
+        <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="10" rx="1"></rect><line x1="6" y1="7" x2="6" y2="11"></line><line x1="10" y1="7" x2="10" y2="13"></line><line x1="14" y1="7" x2="14" y2="11"></line><line x1="18" y1="7" x2="18" y2="13"></line></svg>
     </div>
-    
     <div class="tab-btn" id="btn-don" onclick="toggleTab('don')"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg></div>
-    <div class="tab-btn" id="btn-layers" onclick="toggleTab('layers')">
-        <svg viewBox="0 0 24 24"><path d="M9 20l-5-2V4l5 2m0 14l6-2m-6 2V6m6 12l5 2V6l-5-2m0 14V4M9 6l6-2"></path></svg>
-    </div>
+    <div class="tab-btn" id="btn-layers" onclick="toggleTab('layers')"><svg viewBox="0 0 24 24"><path d="M9 20l-5-2V4l5 2m0 14l6-2m-6 2V6m6 12l5 2V6l-5-2m0 14V4M9 6l6-2"></path></svg></div>
     <div class="tab-btn" id="btn-links" onclick="toggleTab('links')"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></div>
 </div>
 
@@ -157,38 +130,31 @@
         <div style="display: flex; flex-direction: column; gap: 8px;">
             <div id="layer-carto-dark" class="layer-option active" onclick="setBaseLayer('carto-dark')">
                 <div class="layer-preview" style="background: linear-gradient(135deg, #111 50%, #222 50%);"></div>
-                <span>CartoDB Dark</span>
-                <div class="layer-check">✓</div>
+                <span>CartoDB Dark</span><div class="layer-check">✓</div>
             </div>
             <div id="layer-carto-light" class="layer-option" onclick="setBaseLayer('carto-light')">
                 <div class="layer-preview" style="background: linear-gradient(135deg, #e8e8e8 50%, #d0d0d0 50%);"></div>
-                <span>CartoDB Positron</span>
-                <div class="layer-check">✓</div>
+                <span>CartoDB Positron</span><div class="layer-check">✓</div>
             </div>
             <div id="layer-esri" class="layer-option" onclick="setBaseLayer('esri')">
                 <div class="layer-preview" style="background: linear-gradient(135deg, #4a6741 50%, #6b8f5e 50%);"></div>
-                <span>ESRI Satellite</span>
-                <div class="layer-check">✓</div>
+                <span>ESRI Satellite</span><div class="layer-check">✓</div>
             </div>
             <div id="layer-google-hybrid" class="layer-option" onclick="setBaseLayer('google-hybrid')">
                 <div class="layer-preview" style="background: linear-gradient(135deg, #3a5a3a 50%, #5a7a4a 50%);"></div>
-                <span>Google Hybrid</span>
-                <div class="layer-check">✓</div>
+                <span>Google Hybrid</span><div class="layer-check">✓</div>
             </div>
             <div id="layer-google-satellite" class="layer-option" onclick="setBaseLayer('google-satellite')">
                 <div class="layer-preview" style="background: linear-gradient(135deg, #2a4a2a 50%, #1a3a1a 50%);"></div>
-                <span>Google Satellite</span>
-                <div class="layer-check">✓</div>
+                <span>Google Satellite</span><div class="layer-check">✓</div>
             </div>
             <div id="layer-osm" class="layer-option" onclick="setBaseLayer('osm')">
                 <div class="layer-preview" style="background: linear-gradient(135deg, #c8dfc8 50%, #a8c8a8 50%);"></div>
-                <span>OSM Map</span>
-                <div class="layer-check">✓</div>
+                <span>OSM Map</span><div class="layer-check">✓</div>
             </div>
             <div id="layer-maptiler" class="layer-option" onclick="setBaseLayer('maptiler')">
                 <div class="layer-preview" style="background: linear-gradient(135deg, #b8c8d8 50%, #98a8c8 50%);"></div>
-                <span>Google Roadmap</span>
-                <div class="layer-check">✓</div>
+                <span>Google Roadmap</span><div class="layer-check">✓</div>
             </div>
         </div>
     </div>
@@ -228,49 +194,55 @@
 
     let currentBaseLayer = baseLayers['carto-dark'];
     const map = L.map('map', { zoomControl: false, attributionControl: false, layers: [currentBaseLayer] }).setView([48.3, 37.5], 7);
-    const fillGroup = L.layerGroup().addTo(map); 
+    const fillGroup    = L.layerGroup().addTo(map);
     const highlightGroup = L.layerGroup().addTo(map);
-    const pointsGroup = L.layerGroup().addTo(map);
+    const pointsGroup  = L.layerGroup().addTo(map);
     const measureLayer = L.layerGroup().addTo(map);
 
     let availableDates = [], currentDateIndex = 0, currentStep = 1, maxStepsForDate = 1, fp;
 
-    // --- БЛОКИРОВКА ПОПАПОВ ПРИ ИЗМЕРЕНИИ ---
-    // Отключает pointer-events на overlayPane (SVG с полигонами) и markerPane
+    // ── БЛОКИРОВКА ПОПАПОВ ───────────────────────────────────────────────────
+    // overlayPane — SVG-слой где живут все полигоны Leaflet.
+    // pointer-events: none на нём делает их полностью некликабельными,
+    // клики летят напрямую в map.on('click'), попапы не открываются.
     function setMapLayersInteractive(enabled) {
         const overlayPane = map.getPane('overlayPane');
-        const markerPane  = map.getPane('markerPane');
-        const shadowPane  = map.getPane('shadowPane');
-        const val = enabled ? '' : 'none';
-        if (overlayPane) overlayPane.style.pointerEvents = val;
-        if (markerPane)  markerPane.style.pointerEvents  = val;
-        if (shadowPane)  shadowPane.style.pointerEvents  = val;
+        if (overlayPane) overlayPane.style.pointerEvents = enabled ? '' : 'none';
+        if (!enabled) map.closePopup();
     }
 
-    // --- ЛОГИКА ИЗМЕРЕНИЙ ---
+    // ── ИЗМЕРЕНИЯ ────────────────────────────────────────────────────────────
     let activeMeasureTool = null;
     let measurePoints = [];
     let isFinished = false;
-    let measurePolyline = L.polyline([], {color: '#c2b280', weight: 3, dashArray: '5, 10'}).addTo(measureLayer);
+    let measurePolyline = L.polyline([], { color: '#c2b280', weight: 3, dashArray: '5, 10' }).addTo(measureLayer);
 
     function setMeasureTool(tool) {
         if (canvas.classList.contains('active')) togglePaint();
-        
-        if (activeMeasureTool !== tool) {
-            clearMeasurements();
-        }
-        
+
+        if (activeMeasureTool !== tool) clearMeasurements();
+
         activeMeasureTool = (activeMeasureTool === tool) ? null : tool;
-        
+
         document.querySelectorAll('#t-measure .tool-btn').forEach(b => b.classList.remove('active'));
 
         if (activeMeasureTool) {
             document.getElementById('m-tool-' + (tool === 'distance' ? 'dist' : 'coord')).classList.add('active');
             map.getContainer().style.cursor = 'crosshair';
-            setMapLayersInteractive(false); // заморозить полигоны
+            setMapLayersInteractive(false);
+            map.dragging.disable();
+            map.touchZoom.disable();
+            map.scrollWheelZoom.disable();
+            map.doubleClickZoom.disable();
+            map.boxZoom.disable();
         } else {
             map.getContainer().style.cursor = '';
-            setMapLayersInteractive(true);  // разморозить полигоны
+            setMapLayersInteractive(true);
+            map.dragging.enable();
+            map.touchZoom.enable();
+            map.scrollWheelZoom.enable();
+            map.doubleClickZoom.enable();
+            map.boxZoom.enable();
         }
     }
 
@@ -281,40 +253,31 @@
             const lat = e.latlng.lat.toFixed(6);
             const lng = e.latlng.lng.toFixed(6);
             document.getElementById('measure-result').innerHTML = `Широта: ${lat}<br>Долгота: ${lng}`;
-            L.circleMarker(e.latlng, { radius: 5, color: '#c2b280' }).addTo(measureLayer)
-                .bindTooltip(`${lat}, ${lng}`, {permanent: true}).openTooltip();
-        } 
-        else if (activeMeasureTool === 'distance') {
-            if (isFinished) {
-                clearMeasurements();
-                isFinished = false;
-            }
+            L.circleMarker(e.latlng, { radius: 5, color: '#c2b280' })
+                .addTo(measureLayer)
+                .bindTooltip(`${lat}, ${lng}`, { permanent: true })
+                .openTooltip();
+        } else if (activeMeasureTool === 'distance') {
+            if (isFinished) { clearMeasurements(); isFinished = false; }
 
             const lastPoint = measurePoints[measurePoints.length - 1];
             const newPoint = [e.latlng.lng, e.latlng.lat];
 
             if (lastPoint && lastPoint[0] === newPoint[0] && lastPoint[1] === newPoint[1]) {
                 isFinished = true;
-                measurePolyline.setStyle({dashArray: null, color: '#44ff44'});
+                measurePolyline.setStyle({ dashArray: null, color: '#44ff44' });
                 document.getElementById('measure-result').innerHTML += "<br><b style='color:#44ff44;'>ЗАВЕРШЕНО</b>";
                 return;
             }
 
             measurePoints.push(newPoint);
             measurePolyline.addLatLng(e.latlng);
-            
-            L.circleMarker(e.latlng, { 
-                radius: 4, 
-                color: '#8b0000', 
-                fillColor: '#fff', 
-                fillOpacity: 1,
-                interactive: false
-            }).addTo(measureLayer);
+            L.circleMarker(e.latlng, { radius: 4, color: '#8b0000', fillColor: '#fff', fillOpacity: 1, interactive: true }).addTo(measureLayer);
 
             if (measurePoints.length > 1) {
-                const line = turf.lineString(measurePoints);
-                const length = turf.length(line, {units: 'kilometers'}).toFixed(2);
-                document.getElementById('measure-result').innerHTML = `Расстояние: ${length} км<br>Точек: ${measurePoints.length}<br><span style="font-size:9px; color:#666;">Кликните на последнюю точку для фиксации</span>`;
+                const length = turf.length(turf.lineString(measurePoints), { units: 'kilometers' }).toFixed(2);
+                document.getElementById('measure-result').innerHTML =
+                    `Расстояние: ${length} км<br>Точек: ${measurePoints.length}<br><span style="font-size:9px; color:#666;">Кликните на последнюю точку для фиксации</span>`;
             }
         }
     });
@@ -323,27 +286,22 @@
         measureLayer.clearLayers();
         measurePoints = [];
         isFinished = false;
-        measurePolyline = L.polyline([], {color: '#c2b280', weight: 3, dashArray: '5, 10'}).addTo(measureLayer);
+        measurePolyline = L.polyline([], { color: '#c2b280', weight: 3, dashArray: '5, 10' }).addTo(measureLayer);
         document.getElementById('measure-result').innerHTML = "Выберите инструмент и кликните на карту";
-        // Восстанавливаем интерактивность только если инструмент не активен
-        if (!activeMeasureTool) {
-            setMapLayersInteractive(true);
-        }
+        if (!activeMeasureTool) setMapLayersInteractive(true);
     }
 
-    // --- СТАНДАРТНЫЕ ФУНКЦИИ КАРТЫ ---
+    // ── ЗАГРУЗКА ДАННЫХ ──────────────────────────────────────────────────────
     async function initApp() {
         try {
             const res = await fetch('dates.json?t=' + Date.now());
             availableDates = await res.json();
             currentDateIndex = availableDates.length - 1;
             const lastDate = availableDates[currentDateIndex];
-
             fp = flatpickr("#calendar-trigger", {
                 locale: "ru", dateFormat: "Y-m-d", defaultDate: lastDate, enable: availableDates,
                 onChange: async (d, s) => { currentDateIndex = availableDates.indexOf(s); currentStep = 1; await detectStepsForDate(s); loadKML(); }
             });
-
             await detectStepsForDate(lastDate);
             currentStep = maxStepsForDate;
             loadKML();
@@ -361,7 +319,7 @@
         maxStepsForDate = Math.max(1, step - 1);
     }
 
-    // --- ХАЙЛАЙТЫ ---
+    // ── ХАЙЛАЙТЫ ─────────────────────────────────────────────────────────────
     let prevGeoJSON = null;
     let currentGeoJSON = null;
 
@@ -370,9 +328,8 @@
         layer.eachLayer(l => {
             if (l.toGeoJSON) {
                 const gj = l.toGeoJSON();
-                if (gj.geometry && (gj.geometry.type === 'Polygon' || gj.geometry.type === 'MultiPolygon')) {
+                if (gj.geometry && (gj.geometry.type === 'Polygon' || gj.geometry.type === 'MultiPolygon'))
                     features.push(gj);
-                }
             }
         });
         return turf.featureCollection(features);
@@ -384,56 +341,23 @@
         if (!prevGeoJSON || !currentGeoJSON) return;
 
         const groups = [
-            { names: ['рф','россия','вс рф'], color: '#FF6600' },
-            { names: ['украина'],             color: '#00BFFF' },
+            { names: ['рф', 'россия', 'вс рф'], color: '#FF6600' },
+            { names: ['украина'],                color: '#00BFFF' },
         ];
 
         groups.forEach(({ names, color }) => {
-            const prevFiltered = prevGeoJSON.features.filter(f => {
-                const n = (f.properties.name || '').toLowerCase();
-                return names.some(k => n.includes(k));
-            });
-            const currFiltered = currentGeoJSON.features.filter(f => {
-                const n = (f.properties.name || '').toLowerCase();
-                return names.some(k => n.includes(k));
-            });
-
-            if (prevFiltered.length === 0 || currFiltered.length === 0) return;
-
+            const prevF = prevGeoJSON.features.filter(f => { const n = (f.properties.name||'').toLowerCase(); return names.some(k => n.includes(k)); });
+            const currF = currentGeoJSON.features.filter(f => { const n = (f.properties.name||'').toLowerCase(); return names.some(k => n.includes(k)); });
+            if (!prevF.length || !currF.length) return;
             try {
-                let prevMerged = prevFiltered[0];
-                for (let i = 1; i < prevFiltered.length; i++) {
-                    try { prevMerged = turf.union(prevMerged, prevFiltered[i]); } catch(e) {}
-                }
-                let currMerged = currFiltered[0];
-                for (let i = 1; i < currFiltered.length; i++) {
-                    try { currMerged = turf.union(currMerged, currFiltered[i]); } catch(e) {}
-                }
-
-                const diff = turf.difference(currMerged, prevMerged);
+                let pM = prevF[0]; for (let i = 1; i < prevF.length; i++) { try { pM = turf.union(pM, prevF[i]); } catch(e) {} }
+                let cM = currF[0]; for (let i = 1; i < currF.length; i++) { try { cM = turf.union(cM, currF[i]); } catch(e) {} }
+                const diff = turf.difference(cM, pM);
                 if (!diff) return;
-
-                const hlLayer = L.geoJSON(diff, {
-                    style: {
-                        fillColor: 'transparent',
-                        fillOpacity: 0,
-                        color: color,
-                        weight: 3,
-                        opacity: 1,
-                    }
-                });
-
-                hlLayer.on('add', function() {
-                    hlLayer.eachLayer(l => {
-                        if (l._path) l._path.classList.add('highlight-layer');
-                    });
-                });
-
+                const hlLayer = L.geoJSON(diff, { style: { fillColor: 'transparent', fillOpacity: 0, color, weight: 3, opacity: 1 } });
+                hlLayer.on('add', () => hlLayer.eachLayer(l => { if (l._path) l._path.classList.add('highlight-layer'); }));
                 hlLayer.addTo(highlightGroup);
-                hlLayer.eachLayer(l => {
-                    if (l._path) l._path.classList.add('highlight-layer');
-                });
-
+                hlLayer.eachLayer(l => { if (l._path) l._path.classList.add('highlight-layer'); });
             } catch(e) { console.warn('Highlight error:', e); }
         });
     }
@@ -453,20 +377,12 @@
         } else if (currentDateIndex > 0) {
             const prevDate = availableDates[currentDateIndex - 1];
             let s = 1;
-            while (s < 15) {
-                try {
-                    const r = await fetch(`history/${prevDate}/step${s}.kml`, { method: 'HEAD' });
-                    if (r.ok) s++; else break;
-                } catch { break; }
-            }
-            if (s > 1) prevUrl = `history/${prevDate}/step${s - 1}.kml`;
+            while (s < 15) { try { const r = await fetch(`history/${prevDate}/step${s}.kml`,{method:'HEAD'}); if(r.ok) s++; else break; } catch { break; } }
+            if (s > 1) prevUrl = `history/${prevDate}/step${s-1}.kml`;
         }
 
-        fillGroup.clearLayers();
-        pointsGroup.clearLayers();
-        highlightGroup.clearLayers();
-        prevGeoJSON = null;
-        currentGeoJSON = null;
+        fillGroup.clearLayers(); pointsGroup.clearLayers(); highlightGroup.clearLayers();
+        prevGeoJSON = null; currentGeoJSON = null;
 
         const currentLayer = omnivore.kml(kmlUrl, null, L.geoJson(null, {
             style: (f) => {
@@ -477,12 +393,10 @@
                 else if (name.includes("серая")) color = "#FFFFFF";
                 return { fillColor: color, fillOpacity: 0.45, color: showStroke ? color : null, weight: showStroke ? 2 : 0, interactive: true };
             },
-            onEachFeature: (f, l) => {
-                if (f.properties.name) l.bindPopup(`<b>${f.properties.name}</b>`);
-            }
+            onEachFeature: (f, l) => { if (f.properties.name) l.bindPopup(`<b>${f.properties.name}</b>`); }
         }));
 
-        currentLayer.on('ready', function() {
+        currentLayer.on('ready', function () {
             this.eachLayer(l => {
                 if (l instanceof L.Marker) {
                     L.marker(l.getLatLng(), { icon: L.divIcon({ html: '<div class="dot-container"><div class="pulsating-dot"></div></div>', iconSize: [24,24] }) }).addTo(pointsGroup);
@@ -490,23 +404,18 @@
             });
             currentGeoJSON = kmlLayerToGeoJSON(this);
 
-            // После загрузки — если инструмент измерения активен, снова блокируем
-            if (activeMeasureTool) {
-                setMapLayersInteractive(false);
-            }
+            // Если инструмент измерений активен — сразу перезаблокировать
+            if (activeMeasureTool) setMapLayersInteractive(false);
 
             if (prevUrl) {
                 const prevLayer = omnivore.kml(prevUrl, null, L.geoJson(null, {}));
-                prevLayer.on('ready', function() {
-                    prevGeoJSON = kmlLayerToGeoJSON(this);
-                    updateHighlights();
-                });
+                prevLayer.on('ready', function () { prevGeoJSON = kmlLayerToGeoJSON(this); updateHighlights(); });
                 prevLayer.on('error', () => updateHighlights());
             }
         });
     }
 
-    // --- ЛОГИКА РИСОВАНИЯ ---
+    // ── РИСОВАНИЕ ────────────────────────────────────────────────────────────
     const canvas = document.getElementById('paint-canvas');
     const ctx = canvas.getContext('2d');
     const sizeInput = document.getElementById('brush-size');
@@ -520,9 +429,12 @@
     resizeCanvas();
 
     function togglePaint() {
-        // Если активен инструмент измерения — сначала выключаем его
-        if (activeMeasureTool) setMeasureTool(null);
-
+        if (!canvas.classList.contains('active') && activeMeasureTool) {
+            activeMeasureTool = null;
+            document.querySelectorAll('#t-measure .tool-btn').forEach(b => b.classList.remove('active'));
+            map.getContainer().style.cursor = '';
+            setMapLayersInteractive(true);
+        }
         const active = canvas.classList.toggle('active');
         const btn = document.getElementById('draw-btn');
         if (active) {
@@ -556,7 +468,7 @@
     canvas.addEventListener('pointermove', (e) => {
         if (!drawing) return;
         const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left; const y = e.clientY - rect.top;
+        const x = e.clientX - rect.left, y = e.clientY - rect.top;
         if (currentTool === 'brush') { ctx.lineTo(x, y); ctx.stroke(); }
         else {
             ctx.putImageData(snapshot, 0, 0); ctx.beginPath();
@@ -565,8 +477,9 @@
                 const angle = Math.atan2(y - startY, x - startX);
                 const headLen = sizeInput.value * 4;
                 ctx.moveTo(startX, startY); ctx.lineTo(x, y);
-                ctx.lineTo(x-headLen*Math.cos(angle-0.5), y-headLen*Math.sin(angle-0.5));
-                ctx.moveTo(x, y); ctx.lineTo(x-headLen*Math.cos(angle+0.5), y-headLen*Math.sin(angle+0.5));
+                ctx.lineTo(x - headLen * Math.cos(angle - 0.5), y - headLen * Math.sin(angle - 0.5));
+                ctx.moveTo(x, y);
+                ctx.lineTo(x - headLen * Math.cos(angle + 0.5), y - headLen * Math.sin(angle + 0.5));
             }
             ctx.stroke();
         }
@@ -578,29 +491,26 @@
             const a = document.createElement('a'); a.download = 'map.png'; a.href = c.toDataURL(); a.click();
         });
     }
-
     function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
 
+    // ── НАВИГАЦИЯ / UI ───────────────────────────────────────────────────────
     function toggleTab(id) {
         const sidebar = document.getElementById('sidebar');
         const btn = document.getElementById('btn-' + id);
         const page = document.getElementById('t-' + id);
-        
         if (btn.classList.contains('active') && !sidebar.classList.contains('collapsed')) {
-            sidebar.classList.add('collapsed'); 
-            btn.classList.remove('active');
+            sidebar.classList.add('collapsed'); btn.classList.remove('active');
         } else {
             sidebar.classList.remove('collapsed');
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.tab-page').forEach(p => p.classList.remove('active'));
-            btn.classList.add('active'); 
-            page.classList.add('active');
+            btn.classList.add('active'); page.classList.add('active');
         }
         setTimeout(() => map.invalidateSize(), 300);
     }
 
     async function nextStep() {
-        if (currentStep < maxStepsForDate) { currentStep++; loadKML(); } 
+        if (currentStep < maxStepsForDate) { currentStep++; loadKML(); }
         else if (currentDateIndex < availableDates.length - 1) { currentDateIndex++; currentStep = 1; await detectStepsForDate(availableDates[currentDateIndex]); fp.setDate(availableDates[currentDateIndex]); loadKML(); }
     }
     async function prevStep() {
