@@ -50,7 +50,6 @@
         .layer-preview { width: 36px; height: 36px; border-radius: 4px; flex-shrink: 0; border: 1px solid #333; }
         .layer-check { margin-left: auto; color: var(--khaki); opacity: 0; font-size: 14px; }
         .layer-option.active .layer-check { opacity: 1; }
-        /* Блокировка кликов по полигонам во время измерения */
         .measure-active .leaflet-overlay-pane,
         .measure-active .leaflet-overlay-pane svg,
         .measure-active .leaflet-overlay-pane path,
@@ -59,7 +58,6 @@
         .measure-active .leaflet-popup-pane {
             pointer-events: none !important;
         }
-
         @keyframes highlightPulse { 0% { opacity: 0.7; } 50% { opacity: 0.15; } 100% { opacity: 0.7; } }
         .highlight-layer { animation: highlightPulse 2s ease-in-out infinite; }
     </style>
@@ -166,6 +164,35 @@
                 <div class="layer-preview" style="background: linear-gradient(135deg, #b8c8d8 50%, #98a8c8 50%);"></div>
                 <span>Google Roadmap</span><div class="layer-check">✓</div>
             </div>
+            <div style="font-size: 9px; letter-spacing: 2px; color: #555; padding: 8px 4px 4px;">MAPTILER</div>
+            <div id="layer-maptiler-streets" class="layer-option" onclick="setBaseLayer('maptiler-streets')">
+                <div class="layer-preview" style="background: linear-gradient(135deg, #d4e8f0 50%, #a8c8d8 50%);"></div>
+                <span>MT Streets</span><div class="layer-check">✓</div>
+            </div>
+            <div id="layer-maptiler-dark" class="layer-option" onclick="setBaseLayer('maptiler-dark')">
+                <div class="layer-preview" style="background: linear-gradient(135deg, #1a1a2e 50%, #16213e 50%);"></div>
+                <span>MT Dark</span><div class="layer-check">✓</div>
+            </div>
+            <div id="layer-maptiler-satellite" class="layer-option" onclick="setBaseLayer('maptiler-satellite')">
+                <div class="layer-preview" style="background: linear-gradient(135deg, #1a2f1a 50%, #0d1f0d 50%);"></div>
+                <span>MT Satellite</span><div class="layer-check">✓</div>
+            </div>
+            <div id="layer-maptiler-hybrid" class="layer-option" onclick="setBaseLayer('maptiler-hybrid')">
+                <div class="layer-preview" style="background: linear-gradient(135deg, #2a3f2a 50%, #3a5a3a 50%);"></div>
+                <span>MT Hybrid</span><div class="layer-check">✓</div>
+            </div>
+            <div id="layer-maptiler-topo" class="layer-option" onclick="setBaseLayer('maptiler-topo')">
+                <div class="layer-preview" style="background: linear-gradient(135deg, #e8d8a0 50%, #c8b870 50%);"></div>
+                <span>MT Topo</span><div class="layer-check">✓</div>
+            </div>
+            <div id="layer-maptiler-outdoor" class="layer-option" onclick="setBaseLayer('maptiler-outdoor')">
+                <div class="layer-preview" style="background: linear-gradient(135deg, #a8c878 50%, #88a858 50%);"></div>
+                <span>MT Outdoor</span><div class="layer-check">✓</div>
+            </div>
+            <div id="layer-maptiler-winter" class="layer-option" onclick="setBaseLayer('maptiler-winter')">
+                <div class="layer-preview" style="background: linear-gradient(135deg, #e8f0f8 50%, #c8d8f0 50%);"></div>
+                <span>MT Winter</span><div class="layer-check">✓</div>
+            </div>
         </div>
     </div>
 
@@ -192,37 +219,61 @@
 </div>
 
 <script>
+    const MAPTILER_KEY = 'R8mWPuoYHXIRW1mnmNRB';
+
     const baseLayers = {
-        'carto-dark':      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'),
-        'carto-light':     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'),
-        'esri':            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'),
-        'google-hybrid':   L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}'),
-        'google-satellite':L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}'),
-        'osm':             L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png'),
-        'maptiler':        L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}'),
+        'carto-dark':       L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'),
+        'carto-light':      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'),
+        'esri':             L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'),
+        'google-hybrid':    L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}'),
+        'google-satellite': L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}'),
+        'osm':              L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png'),
+        'maptiler':         L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}'),
+        'maptiler-streets': L.tileLayer(
+            `https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`,
+            { maxZoom: 22, attribution: '© <a href="https://www.maptiler.com/">MapTiler</a> © OpenStreetMap' }
+        ),
+        'maptiler-satellite': L.tileLayer(
+            `https://api.maptiler.com/maps/satellite/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY}`,
+            { maxZoom: 22, attribution: '© <a href="https://www.maptiler.com/">MapTiler</a> © OpenStreetMap' }
+        ),
+        'maptiler-hybrid': L.tileLayer(
+            `https://api.maptiler.com/maps/hybrid/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY}`,
+            { maxZoom: 22, attribution: '© <a href="https://www.maptiler.com/">MapTiler</a> © OpenStreetMap' }
+        ),
+        'maptiler-topo': L.tileLayer(
+            `https://api.maptiler.com/maps/topo-v2/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`,
+            { maxZoom: 22, attribution: '© <a href="https://www.maptiler.com/">MapTiler</a> © OpenStreetMap' }
+        ),
+        'maptiler-outdoor': L.tileLayer(
+            `https://api.maptiler.com/maps/outdoor-v2/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`,
+            { maxZoom: 22, attribution: '© <a href="https://www.maptiler.com/">MapTiler</a> © OpenStreetMap' }
+        ),
+        'maptiler-dark': L.tileLayer(
+            `https://api.maptiler.com/maps/streets-v2-dark/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`,
+            { maxZoom: 22, attribution: '© <a href="https://www.maptiler.com/">MapTiler</a> © OpenStreetMap' }
+        ),
+        'maptiler-winter': L.tileLayer(
+            `https://api.maptiler.com/maps/winter-v2/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`,
+            { maxZoom: 22, attribution: '© <a href="https://www.maptiler.com/">MapTiler</a> © OpenStreetMap' }
+        ),
     };
 
     let currentBaseLayer = baseLayers['carto-dark'];
     const map = L.map('map', { zoomControl: false, attributionControl: false, layers: [currentBaseLayer] }).setView([48.3, 37.5], 7);
-    const fillGroup    = L.layerGroup().addTo(map);
+    const fillGroup      = L.layerGroup().addTo(map);
     const highlightGroup = L.layerGroup().addTo(map);
-    const pointsGroup  = L.layerGroup().addTo(map);
-    const measureLayer = L.layerGroup().addTo(map);
+    const pointsGroup    = L.layerGroup().addTo(map);
+    const measureLayer   = L.layerGroup().addTo(map);
 
     let availableDates = [], currentDateIndex = 0, currentStep = 1, maxStepsForDate = 1, fp;
 
-    // ── БЛОКИРОВКА ПОПАПОВ ───────────────────────────────────────────────────
-    // overlayPane — SVG-слой где живут все полигоны Leaflet.
-    // pointer-events: none на нём делает их полностью некликабельными,
-    // клики летят напрямую в map.on('click'), попапы не открываются.
     function setMapLayersInteractive(enabled) {
         const val = enabled ? '' : 'none';
-        // Блокируем ВСЕ панели Leaflet кроме measureLayer
         ['overlayPane', 'markerPane', 'shadowPane', 'tooltipPane', 'popupPane'].forEach(p => {
             const pane = map.getPane(p);
             if (pane) pane.style.pointerEvents = val;
         });
-        // Дополнительно — напрямую на SVG внутри overlayPane
         const svg = map.getPane('overlayPane') && map.getPane('overlayPane').querySelector('svg');
         if (svg) svg.style.pointerEvents = val;
         if (!enabled) map.closePopup();
@@ -236,13 +287,9 @@
 
     function setMeasureTool(tool) {
         if (canvas.classList.contains('active')) togglePaint();
-
         if (activeMeasureTool !== tool) clearMeasurements();
-
         activeMeasureTool = (activeMeasureTool === tool) ? null : tool;
-
         document.querySelectorAll('#t-measure .tool-btn').forEach(b => b.classList.remove('active'));
-
         if (activeMeasureTool) {
             document.getElementById('m-tool-' + (tool === 'distance' ? 'dist' : 'coord')).classList.add('active');
             map.getContainer().style.cursor = 'crosshair';
@@ -268,7 +315,6 @@
 
     map.on('click', (e) => {
         if (!activeMeasureTool) return;
-
         if (activeMeasureTool === 'coords') {
             const lat = e.latlng.lat.toFixed(6);
             const lng = e.latlng.lng.toFixed(6);
@@ -279,21 +325,17 @@
                 .openTooltip();
         } else if (activeMeasureTool === 'distance') {
             if (isFinished) { clearMeasurements(); isFinished = false; }
-
             const lastPoint = measurePoints[measurePoints.length - 1];
             const newPoint = [e.latlng.lng, e.latlng.lat];
-
             if (lastPoint && lastPoint[0] === newPoint[0] && lastPoint[1] === newPoint[1]) {
                 isFinished = true;
                 measurePolyline.setStyle({ dashArray: null, color: '#44ff44' });
                 document.getElementById('measure-result').innerHTML += "<br><b style='color:#44ff44;'>ЗАВЕРШЕНО</b>";
                 return;
             }
-
             measurePoints.push(newPoint);
             measurePolyline.addLatLng(e.latlng);
             L.circleMarker(e.latlng, { radius: 4, color: '#8b0000', fillColor: '#fff', fillOpacity: 1, interactive: true }).addTo(measureLayer);
-
             if (measurePoints.length > 1) {
                 const length = turf.length(turf.lineString(measurePoints), { units: 'kilometers' }).toFixed(2);
                 document.getElementById('measure-result').innerHTML =
@@ -359,12 +401,10 @@
         highlightGroup.clearLayers();
         if (!document.getElementById('highlight-toggle').checked) return;
         if (!prevGeoJSON || !currentGeoJSON) return;
-
         const groups = [
             { names: ['рф', 'россия', 'вс рф'], color: '#FF6600' },
             { names: ['украина'],                color: '#00BFFF' },
         ];
-
         groups.forEach(({ names, color }) => {
             const prevF = prevGeoJSON.features.filter(f => { const n = (f.properties.name||'').toLowerCase(); return names.some(k => n.includes(k)); });
             const currF = currentGeoJSON.features.filter(f => { const n = (f.properties.name||'').toLowerCase(); return names.some(k => n.includes(k)); });
@@ -387,10 +427,8 @@
         if (!date) return;
         const kmlUrl = `history/${date}/step${currentStep}.kml`;
         const showStroke = document.getElementById('stroke-toggle').checked;
-
         document.getElementById('date-label').innerText = date;
         document.getElementById('step-label').innerText = `ШАГ ${currentStep}`;
-
         let prevUrl = null;
         if (currentStep > 1) {
             prevUrl = `history/${date}/step${currentStep - 1}.kml`;
@@ -400,10 +438,8 @@
             while (s < 15) { try { const r = await fetch(`history/${prevDate}/step${s}.kml`,{method:'HEAD'}); if(r.ok) s++; else break; } catch { break; } }
             if (s > 1) prevUrl = `history/${prevDate}/step${s-1}.kml`;
         }
-
         fillGroup.clearLayers(); pointsGroup.clearLayers(); highlightGroup.clearLayers();
         prevGeoJSON = null; currentGeoJSON = null;
-
         const currentLayer = omnivore.kml(kmlUrl, null, L.geoJson(null, {
             style: (f) => {
                 const name = (f.properties.name || "").toLowerCase();
@@ -415,7 +451,6 @@
             },
             onEachFeature: (f, l) => { if (f.properties.name) l.bindPopup(`<b>${f.properties.name}</b>`); }
         }));
-
         currentLayer.on('ready', function () {
             this.eachLayer(l => {
                 if (l instanceof L.Marker) {
@@ -423,10 +458,7 @@
                 } else { l.addTo(fillGroup); }
             });
             currentGeoJSON = kmlLayerToGeoJSON(this);
-
-            // Если инструмент измерений активен — сразу перезаблокировать
             if (activeMeasureTool) setMapLayersInteractive(false);
-
             if (prevUrl) {
                 const prevLayer = omnivore.kml(prevUrl, null, L.geoJson(null, {}));
                 prevLayer.on('ready', function () { prevGeoJSON = kmlLayerToGeoJSON(this); updateHighlights(); });
