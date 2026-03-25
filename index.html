@@ -55,11 +55,20 @@
         .measure-active .leaflet-overlay-pane path,
         .measure-active .leaflet-marker-pane,
         .measure-active .leaflet-tooltip-pane,
-        .measure-active .leaflet-popup-pane {
-            pointer-events: none !important;
-        }
+        .measure-active .leaflet-popup-pane { pointer-events: none !important; }
         @keyframes highlightPulse { 0% { opacity: 0.7; } 50% { opacity: 0.15; } 100% { opacity: 0.7; } }
         .highlight-layer { animation: highlightPulse 2s ease-in-out infinite; }
+
+        /* Localization tab styles */
+        .lang-option { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: #151515; border: 1px solid #222; border-radius: 6px; cursor: pointer; font-size: 14px; transition: 0.2s; margin-bottom: 8px; }
+        .lang-option:hover { border-color: #444; }
+        .lang-option.active { border-color: var(--khaki); background: #1a1e16; color: #fff; }
+        .lang-flag { font-size: 22px; line-height: 1; width: 28px; text-align: center; }
+        .lang-name { flex: 1; }
+        .lang-native { font-size: 11px; color: #666; margin-top: 2px; }
+        .lang-option.active .lang-native { color: #a0946a; }
+        .lang-check { color: var(--khaki); opacity: 0; font-size: 14px; }
+        .lang-option.active .lang-check { opacity: 1; }
     </style>
 </head>
 <body>
@@ -71,14 +80,17 @@
     </div>
     <div class="tab-btn" id="btn-don" onclick="toggleTab('don')"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg></div>
     <div class="tab-btn" id="btn-layers" onclick="toggleTab('layers')"><svg viewBox="0 0 24 24"><path d="M9 20l-5-2V4l5 2m0 14l6-2m-6 2V6m6 12l5 2V6l-5-2m0 14V4M9 6l6-2"></path></svg></div>
+    <div class="tab-btn" id="btn-locale" onclick="toggleTab('locale')">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+    </div>
     <div class="tab-btn" id="btn-links" onclick="toggleTab('links')"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></div>
 </div>
 
 <div id="sidebar">
     <div id="t-map" class="tab-page active">
-        <h2 style="font-size: 11px; letter-spacing: 2px; margin-bottom: 15px;">НАСТРОЙКИ И ДАТА</h2>
+        <h2 style="font-size: 11px; letter-spacing: 2px; margin-bottom: 15px;" data-i18n="settings_date">НАСТРОЙКИ И ДАТА</h2>
         <div class="switch-group" style="flex-direction: column; align-items: flex-start;">
-            <span style="margin-bottom: 8px; font-size: 11px; color: #888;">ДАТА:</span>
+            <span style="margin-bottom: 8px; font-size: 11px; color: #888;" data-i18n="date_label">ДАТА:</span>
             <input type="text" id="calendar-trigger" readonly style="width: 100%; background: #1a1a1a; color: var(--khaki); border: 1px solid #333; padding: 10px; border-radius: 4px; cursor: pointer; text-align: center;">
         </div>
         <div class="switch-group" style="flex-direction: column; background: #111;">
@@ -87,30 +99,30 @@
                 <span id="date-label" style="color: #888; font-family: monospace;">--.--.--</span>
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%;">
-                <button class="tool-btn" onclick="prevStep()">⬅ НАЗАД</button>
-                <button class="tool-btn" onclick="nextStep()">ВПЕРЕД ➡</button>
+                <button class="tool-btn" onclick="prevStep()" data-i18n="btn_back">⬅ НАЗАД</button>
+                <button class="tool-btn" onclick="nextStep()" data-i18n="btn_forward">ВПЕРЕД ➡</button>
             </div>
         </div>
         <div class="switch-group" onclick="toggleCheck('stroke-toggle')">
-            <span>Границы фронта</span>
+            <span data-i18n="front_borders">Границы фронта</span>
             <label class="switch"><input type="checkbox" id="stroke-toggle" checked onchange="loadKML()"><span class="slider"></span></label>
         </div>
         <div class="switch-group" onclick="toggleCheck('highlight-toggle')">
-            <span>Хайлайты продвижений</span>
+            <span data-i18n="highlights">Хайлайты продвижений</span>
             <label class="switch"><input type="checkbox" id="highlight-toggle" checked onchange="updateHighlights()"><span class="slider"></span></label>
         </div>
     </div>
 
     <div id="t-draw" class="tab-page">
-        <h2 style="font-size: 11px; letter-spacing: 2px; margin-bottom: 15px;">ИНСТРУМЕНТЫ РИСОВАНИЯ</h2>
+        <h2 style="font-size: 11px; letter-spacing: 2px; margin-bottom: 15px;" data-i18n="draw_tools">ИНСТРУМЕНТЫ РИСОВАНИЯ</h2>
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-bottom: 10px;">
-            <button class="tool-btn active" id="tool-brush" onclick="setTool('brush')">Кисть</button>
-            <button class="tool-btn" id="tool-arrow" onclick="setTool('arrow')">Стрелка</button>
-            <button class="tool-btn" id="tool-circle" onclick="setTool('circle')">Круг</button>
+            <button class="tool-btn active" id="tool-brush" onclick="setTool('brush')" data-i18n="brush">Кисть</button>
+            <button class="tool-btn" id="tool-arrow" onclick="setTool('arrow')" data-i18n="arrow">Стрелка</button>
+            <button class="tool-btn" id="tool-circle" onclick="setTool('circle')" data-i18n="circle">Круг</button>
         </div>
         <div class="switch-group" style="flex-direction: column; align-items: stretch; gap: 10px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-size: 10px; color: #888;">ЦВЕТ И РАЗМЕР:</span>
+                <span style="font-size: 10px; color: #888;" data-i18n="color_size">ЦВЕТ И РАЗМЕР:</span>
                 <span id="brush-size-val" style="color: var(--khaki); font-family: monospace; font-size: 11px;">3px</span>
             </div>
             <div style="display: flex; gap: 10px; align-items: center;">
@@ -118,23 +130,23 @@
                 <input type="range" id="brush-size" min="1" max="30" value="3" style="flex-grow: 1;">
             </div>
         </div>
-        <button class="tool-btn main-action" id="draw-btn" onclick="togglePaint()">Включить рисование</button>
-        <button class="tool-btn" onclick="clearCanvas()">Очистить</button>
-        <button class="tool-btn" onclick="takeScreenshot()">Скриншот</button>
+        <button class="tool-btn main-action" id="draw-btn" onclick="togglePaint()" data-i18n="enable_draw">Включить рисование</button>
+        <button class="tool-btn" onclick="clearCanvas()" data-i18n="clear">Очистить</button>
+        <button class="tool-btn" onclick="takeScreenshot()" data-i18n="screenshot">Скриншот</button>
     </div>
 
     <div id="t-measure" class="tab-page">
-        <h2 style="font-size: 11px; letter-spacing: 2px; margin-bottom: 15px;">ИЗМЕРЕНИЯ</h2>
+        <h2 style="font-size: 11px; letter-spacing: 2px; margin-bottom: 15px;" data-i18n="measurements">ИЗМЕРЕНИЯ</h2>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-            <button class="tool-btn" id="m-tool-dist" onclick="setMeasureTool('distance')">Линейка</button>
-            <button class="tool-btn" id="m-tool-coord" onclick="setMeasureTool('coords')">Точка</button>
+            <button class="tool-btn" id="m-tool-dist" onclick="setMeasureTool('distance')" data-i18n="ruler">Линейка</button>
+            <button class="tool-btn" id="m-tool-coord" onclick="setMeasureTool('coords')" data-i18n="point">Точка</button>
         </div>
-        <div id="measure-result" class="measure-output">Выберите инструмент и кликните на карту</div>
-        <button class="tool-btn" style="margin-top: 15px;" onclick="clearMeasurements()">Сбросить</button>
+        <div id="measure-result" class="measure-output" data-i18n="measure_hint">Выберите инструмент и кликните на карту</div>
+        <button class="tool-btn" style="margin-top: 15px;" onclick="clearMeasurements()" data-i18n="reset">Сбросить</button>
     </div>
 
     <div id="t-layers" class="tab-page">
-        <h2 style="font-size: 11px; letter-spacing: 2px; margin-bottom: 15px;">ПОДЛОЖКА КАРТЫ</h2>
+        <h2 style="font-size: 11px; letter-spacing: 2px; margin-bottom: 15px;" data-i18n="map_base">ПОДЛОЖКА КАРТЫ</h2>
         <div style="display: flex; flex-direction: column; gap: 8px;">
             <div id="layer-carto-dark" class="layer-option active" onclick="setBaseLayer('carto-dark')">
                 <div class="layer-preview" style="background: linear-gradient(135deg, #111 50%, #222 50%);"></div>
@@ -197,17 +209,61 @@
     </div>
 
     <div id="t-don" class="tab-page">
-        <h2 style="font-size: 11px; letter-spacing: 2px; margin-bottom: 15px;">ПОДДЕРЖКА АВТОРА</h2>
+        <h2 style="font-size: 11px; letter-spacing: 2px; margin-bottom: 15px;" data-i18n="support">ПОДДЕРЖКА АВТОРА</h2>
         <div style="background: #111; padding: 15px; border-radius: 8px; text-align: center;">
             <span style="font-family: monospace; display: block; margin-bottom: 10px;">2200 7005 0856 7400</span>
             <p style="font-size: 12px; color: #666;">Т-Банк</p>
         </div>
     </div>
 
+    <div id="t-locale" class="tab-page">
+        <h2 style="font-size: 11px; letter-spacing: 2px; margin-bottom: 15px;" data-i18n="language">ЯЗЫК ИНТЕРФЕЙСА</h2>
+        <div id="lang-ru" class="lang-option active" onclick="setLocale('ru')">
+            <div class="lang-flag">🇷🇺</div>
+            <div class="lang-name">
+                <div>Русский</div>
+                <div class="lang-native">Русский</div>
+            </div>
+            <div class="lang-check">✓</div>
+        </div>
+        <div id="lang-en" class="lang-option" onclick="setLocale('en')">
+            <div class="lang-flag">🇬🇧</div>
+            <div class="lang-name">
+                <div>English</div>
+                <div class="lang-native">English</div>
+            </div>
+            <div class="lang-check">✓</div>
+        </div>
+        <div id="lang-uk" class="lang-option" onclick="setLocale('uk')">
+            <div class="lang-flag">🇺🇦</div>
+            <div class="lang-name">
+                <div>Українська</div>
+                <div class="lang-native">Українська</div>
+            </div>
+            <div class="lang-check">✓</div>
+        </div>
+        <div id="lang-de" class="lang-option" onclick="setLocale('de')">
+            <div class="lang-flag">🇩🇪</div>
+            <div class="lang-name">
+                <div>Deutsch</div>
+                <div class="lang-native">Deutsch</div>
+            </div>
+            <div class="lang-check">✓</div>
+        </div>
+        <div id="lang-fr" class="lang-option" onclick="setLocale('fr')">
+            <div class="lang-flag">🇫🇷</div>
+            <div class="lang-name">
+                <div>Français</div>
+                <div class="lang-native">Français</div>
+            </div>
+            <div class="lang-check">✓</div>
+        </div>
+    </div>
+
     <div id="t-links" class="tab-page">
-        <h2 style="font-size: 11px; letter-spacing: 2px; margin-bottom: 15px;">РЕСУРСЫ</h2>
+        <h2 style="font-size: 11px; letter-spacing: 2px; margin-bottom: 15px;" data-i18n="resources">РЕСУРСЫ</h2>
         <a href="https://t.me/kartaBD" target="_blank" class="switch-group link-item" style="color: #fff; text-decoration: none;">
-            <span>Telegram Канал</span>
+            <span data-i18n="tg_channel">Telegram Канал</span>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
         </a>
     </div>
@@ -219,6 +275,216 @@
 </div>
 
 <script>
+    // ── ЛОКАЛИЗАЦИЯ ───────────────────────────────────────────────────────────
+    const i18n = {
+        ru: {
+            settings_date: 'НАСТРОЙКИ И ДАТА',
+            date_label: 'ДАТА:',
+            step_prefix: 'ШАГ',
+            btn_back: '⬅ НАЗАД',
+            btn_forward: 'ВПЕРЕД ➡',
+            front_borders: 'Границы фронта',
+            highlights: 'Хайлайты продвижений',
+            draw_tools: 'ИНСТРУМЕНТЫ РИСОВАНИЯ',
+            brush: 'Кисть',
+            arrow: 'Стрелка',
+            circle: 'Круг',
+            color_size: 'ЦВЕТ И РАЗМЕР:',
+            enable_draw: 'Включить рисование',
+            disable_draw: 'Выкл.',
+            clear: 'Очистить',
+            screenshot: 'Скриншот',
+            measurements: 'ИЗМЕРЕНИЯ',
+            ruler: 'Линейка',
+            point: 'Точка',
+            measure_hint: 'Выберите инструмент и кликните на карту',
+            measure_done: 'ЗАВЕРШЕНО',
+            measure_dist: 'Расстояние',
+            measure_pts: 'Точек',
+            measure_click_fix: 'Кликните на последнюю точку для фиксации',
+            measure_lat: 'Широта',
+            measure_lng: 'Долгота',
+            reset: 'Сбросить',
+            map_base: 'ПОДЛОЖКА КАРТЫ',
+            support: 'ПОДДЕРЖКА АВТОРА',
+            language: 'ЯЗЫК ИНТЕРФЕЙСА',
+            resources: 'РЕСУРСЫ',
+            tg_channel: 'Telegram Канал',
+        },
+        en: {
+            settings_date: 'SETTINGS & DATE',
+            date_label: 'DATE:',
+            step_prefix: 'STEP',
+            btn_back: '⬅ BACK',
+            btn_forward: 'FORWARD ➡',
+            front_borders: 'Front lines',
+            highlights: 'Advance highlights',
+            draw_tools: 'DRAWING TOOLS',
+            brush: 'Brush',
+            arrow: 'Arrow',
+            circle: 'Circle',
+            color_size: 'COLOR & SIZE:',
+            enable_draw: 'Enable drawing',
+            disable_draw: 'Off',
+            clear: 'Clear',
+            screenshot: 'Screenshot',
+            measurements: 'MEASUREMENTS',
+            ruler: 'Ruler',
+            point: 'Point',
+            measure_hint: 'Select a tool and click on the map',
+            measure_done: 'DONE',
+            measure_dist: 'Distance',
+            measure_pts: 'Points',
+            measure_click_fix: 'Click last point to finish',
+            measure_lat: 'Latitude',
+            measure_lng: 'Longitude',
+            reset: 'Reset',
+            map_base: 'MAP BASEMAP',
+            support: 'SUPPORT AUTHOR',
+            language: 'INTERFACE LANGUAGE',
+            resources: 'RESOURCES',
+            tg_channel: 'Telegram Channel',
+        },
+        uk: {
+            settings_date: 'НАЛАШТУВАННЯ ТА ДАТА',
+            date_label: 'ДАТА:',
+            step_prefix: 'КРОК',
+            btn_back: '⬅ НАЗАД',
+            btn_forward: 'ВПЕРЕД ➡',
+            front_borders: 'Межі фронту',
+            highlights: 'Хайлайти просування',
+            draw_tools: 'ІНСТРУМЕНТИ МАЛЮВАННЯ',
+            brush: 'Пензль',
+            arrow: 'Стрілка',
+            circle: 'Коло',
+            color_size: 'КОЛІР ТА РОЗМІР:',
+            enable_draw: 'Увімкнути малювання',
+            disable_draw: 'Вимк.',
+            clear: 'Очистити',
+            screenshot: 'Скриншот',
+            measurements: 'ВИМІРЮВАННЯ',
+            ruler: 'Лінійка',
+            point: 'Точка',
+            measure_hint: 'Оберіть інструмент і клікніть на карту',
+            measure_done: 'ЗАВЕРШЕНО',
+            measure_dist: 'Відстань',
+            measure_pts: 'Точок',
+            measure_click_fix: 'Клікніть останню точку для фіксації',
+            measure_lat: 'Широта',
+            measure_lng: 'Довгота',
+            reset: 'Скинути',
+            map_base: 'ПІДЛОЖКА КАРТИ',
+            support: 'ПІДТРИМКА АВТОРА',
+            language: 'МОВА ІНТЕРФЕЙСУ',
+            resources: 'РЕСУРСИ',
+            tg_channel: 'Telegram Канал',
+        },
+        de: {
+            settings_date: 'EINSTELLUNGEN & DATUM',
+            date_label: 'DATUM:',
+            step_prefix: 'SCHRITT',
+            btn_back: '⬅ ZURÜCK',
+            btn_forward: 'WEITER ➡',
+            front_borders: 'Frontlinien',
+            highlights: 'Vorstoß-Highlights',
+            draw_tools: 'ZEICHENWERKZEUGE',
+            brush: 'Pinsel',
+            arrow: 'Pfeil',
+            circle: 'Kreis',
+            color_size: 'FARBE & GRÖẞE:',
+            enable_draw: 'Zeichnen aktivieren',
+            disable_draw: 'Aus',
+            clear: 'Löschen',
+            screenshot: 'Screenshot',
+            measurements: 'MESSUNGEN',
+            ruler: 'Lineal',
+            point: 'Punkt',
+            measure_hint: 'Werkzeug wählen und auf Karte klicken',
+            measure_done: 'FERTIG',
+            measure_dist: 'Entfernung',
+            measure_pts: 'Punkte',
+            measure_click_fix: 'Letzten Punkt klicken zum Abschließen',
+            measure_lat: 'Breite',
+            measure_lng: 'Länge',
+            reset: 'Zurücksetzen',
+            map_base: 'KARTEN-BASEMAP',
+            support: 'AUTOR UNTERSTÜTZEN',
+            language: 'OBERFLÄCHENSPRACHE',
+            resources: 'RESSOURCEN',
+            tg_channel: 'Telegram-Kanal',
+        },
+        fr: {
+            settings_date: 'PARAMÈTRES & DATE',
+            date_label: 'DATE :',
+            step_prefix: 'ÉTAPE',
+            btn_back: '⬅ RETOUR',
+            btn_forward: 'SUIVANT ➡',
+            front_borders: 'Lignes de front',
+            highlights: 'Points saillants',
+            draw_tools: 'OUTILS DE DESSIN',
+            brush: 'Pinceau',
+            arrow: 'Flèche',
+            circle: 'Cercle',
+            color_size: 'COULEUR & TAILLE :',
+            enable_draw: 'Activer le dessin',
+            disable_draw: 'Arrêt',
+            clear: 'Effacer',
+            screenshot: 'Capture',
+            measurements: 'MESURES',
+            ruler: 'Règle',
+            point: 'Point',
+            measure_hint: 'Choisissez un outil et cliquez sur la carte',
+            measure_done: 'TERMINÉ',
+            measure_dist: 'Distance',
+            measure_pts: 'Points',
+            measure_click_fix: 'Cliquer dernier point pour terminer',
+            measure_lat: 'Latitude',
+            measure_lng: 'Longitude',
+            reset: 'Réinitialiser',
+            map_base: 'FOND DE CARTE',
+            support: "SOUTENIR L'AUTEUR",
+            language: "LANGUE DE L'INTERFACE",
+            resources: 'RESSOURCES',
+            tg_channel: 'Chaîne Telegram',
+        }
+    };
+
+    let currentLocale = localStorage.getItem('politmap_locale') || 'ru';
+
+    function t(key) {
+        return (i18n[currentLocale] && i18n[currentLocale][key]) || (i18n['ru'][key]) || key;
+    }
+
+    function applyLocale() {
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            el.textContent = t(key);
+        });
+        // Update step label
+        const stepEl = document.getElementById('step-label');
+        if (stepEl) stepEl.innerText = t('step_prefix') + ' ' + currentStep;
+        // Update draw button
+        const drawBtn = document.getElementById('draw-btn');
+        if (drawBtn) {
+            const isActive = canvas && canvas.classList.contains('active');
+            drawBtn.textContent = isActive ? t('disable_draw') : t('enable_draw');
+        }
+        // Update measure result placeholder if untouched
+        const mr = document.getElementById('measure-result');
+        if (mr && mr.dataset.pristine !== 'false') mr.textContent = t('measure_hint');
+        // Highlight active lang
+        document.querySelectorAll('.lang-option').forEach(el => el.classList.remove('active'));
+        const activeEl = document.getElementById('lang-' + currentLocale);
+        if (activeEl) activeEl.classList.add('active');
+    }
+
+    function setLocale(lang) {
+        currentLocale = lang;
+        localStorage.setItem('politmap_locale', lang);
+        applyLocale();
+    }
+
+    // ── MAP INIT ─────────────────────────────────────────────────────────────
     const MAPTILER_KEY = 'R8mWPuoYHXIRW1mnmNRB';
 
     const baseLayers = {
@@ -229,34 +495,13 @@
         'google-satellite': L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}'),
         'osm':              L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png'),
         'maptiler':         L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}'),
-        'maptiler-streets': L.tileLayer(
-            `https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`,
-            { maxZoom: 22, attribution: '© <a href="https://www.maptiler.com/">MapTiler</a> © OpenStreetMap' }
-        ),
-        'maptiler-satellite': L.tileLayer(
-            `https://api.maptiler.com/maps/satellite/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY}`,
-            { maxZoom: 22, attribution: '© <a href="https://www.maptiler.com/">MapTiler</a> © OpenStreetMap' }
-        ),
-        'maptiler-hybrid': L.tileLayer(
-            `https://api.maptiler.com/maps/hybrid/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY}`,
-            { maxZoom: 22, attribution: '© <a href="https://www.maptiler.com/">MapTiler</a> © OpenStreetMap' }
-        ),
-        'maptiler-topo': L.tileLayer(
-            `https://api.maptiler.com/maps/topo-v2/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`,
-            { maxZoom: 22, attribution: '© <a href="https://www.maptiler.com/">MapTiler</a> © OpenStreetMap' }
-        ),
-        'maptiler-outdoor': L.tileLayer(
-            `https://api.maptiler.com/maps/outdoor-v2/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`,
-            { maxZoom: 22, attribution: '© <a href="https://www.maptiler.com/">MapTiler</a> © OpenStreetMap' }
-        ),
-        'maptiler-dark': L.tileLayer(
-            `https://api.maptiler.com/maps/streets-v2-dark/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`,
-            { maxZoom: 22, attribution: '© <a href="https://www.maptiler.com/">MapTiler</a> © OpenStreetMap' }
-        ),
-        'maptiler-winter': L.tileLayer(
-            `https://api.maptiler.com/maps/winter-v2/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`,
-            { maxZoom: 22, attribution: '© <a href="https://www.maptiler.com/">MapTiler</a> © OpenStreetMap' }
-        ),
+        'maptiler-streets': L.tileLayer(`https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`, { maxZoom: 22 }),
+        'maptiler-satellite': L.tileLayer(`https://api.maptiler.com/maps/satellite/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY}`, { maxZoom: 22 }),
+        'maptiler-hybrid':  L.tileLayer(`https://api.maptiler.com/maps/hybrid/{z}/{x}/{y}.jpg?key=${MAPTILER_KEY}`, { maxZoom: 22 }),
+        'maptiler-topo':    L.tileLayer(`https://api.maptiler.com/maps/topo-v2/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`, { maxZoom: 22 }),
+        'maptiler-outdoor': L.tileLayer(`https://api.maptiler.com/maps/outdoor-v2/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`, { maxZoom: 22 }),
+        'maptiler-dark':    L.tileLayer(`https://api.maptiler.com/maps/streets-v2-dark/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`, { maxZoom: 22 }),
+        'maptiler-winter':  L.tileLayer(`https://api.maptiler.com/maps/winter-v2/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`, { maxZoom: 22 }),
     };
 
     let currentBaseLayer = baseLayers['carto-dark'];
@@ -296,29 +541,25 @@
             setMapLayersInteractive(false);
             map.getContainer().classList.add('measure-active');
             map.closePopup();
-            map.dragging.disable();
-            map.touchZoom.disable();
-            map.scrollWheelZoom.disable();
-            map.doubleClickZoom.disable();
-            map.boxZoom.disable();
+            map.dragging.disable(); map.touchZoom.disable(); map.scrollWheelZoom.disable();
+            map.doubleClickZoom.disable(); map.boxZoom.disable();
         } else {
             map.getContainer().style.cursor = '';
             setMapLayersInteractive(true);
             map.getContainer().classList.remove('measure-active');
-            map.dragging.enable();
-            map.touchZoom.enable();
-            map.scrollWheelZoom.enable();
-            map.doubleClickZoom.enable();
-            map.boxZoom.enable();
+            map.dragging.enable(); map.touchZoom.enable(); map.scrollWheelZoom.enable();
+            map.doubleClickZoom.enable(); map.boxZoom.enable();
         }
     }
 
     map.on('click', (e) => {
         if (!activeMeasureTool) return;
+        const mr = document.getElementById('measure-result');
+        mr.dataset.pristine = 'false';
         if (activeMeasureTool === 'coords') {
             const lat = e.latlng.lat.toFixed(6);
             const lng = e.latlng.lng.toFixed(6);
-            document.getElementById('measure-result').innerHTML = `Широта: ${lat}<br>Долгота: ${lng}`;
+            mr.innerHTML = `${t('measure_lat')}: ${lat}<br>${t('measure_lng')}: ${lng}`;
             L.circleMarker(e.latlng, { radius: 5, color: '#c2b280' })
                 .addTo(measureLayer)
                 .bindTooltip(`${lat}, ${lng}`, { permanent: true })
@@ -330,7 +571,7 @@
             if (lastPoint && lastPoint[0] === newPoint[0] && lastPoint[1] === newPoint[1]) {
                 isFinished = true;
                 measurePolyline.setStyle({ dashArray: null, color: '#44ff44' });
-                document.getElementById('measure-result').innerHTML += "<br><b style='color:#44ff44;'>ЗАВЕРШЕНО</b>";
+                mr.innerHTML += `<br><b style='color:#44ff44;'>${t('measure_done')}</b>`;
                 return;
             }
             measurePoints.push(newPoint);
@@ -338,8 +579,7 @@
             L.circleMarker(e.latlng, { radius: 4, color: '#8b0000', fillColor: '#fff', fillOpacity: 1, interactive: true }).addTo(measureLayer);
             if (measurePoints.length > 1) {
                 const length = turf.length(turf.lineString(measurePoints), { units: 'kilometers' }).toFixed(2);
-                document.getElementById('measure-result').innerHTML =
-                    `Расстояние: ${length} км<br>Точек: ${measurePoints.length}<br><span style="font-size:9px; color:#666;">Кликните на последнюю точку для фиксации</span>`;
+                mr.innerHTML = `${t('measure_dist')}: ${length} ${currentLocale === 'en' ? 'km' : currentLocale === 'de' ? 'km' : currentLocale === 'fr' ? 'km' : 'км'}<br>${t('measure_pts')}: ${measurePoints.length}<br><span style="font-size:9px; color:#666;">${t('measure_click_fix')}</span>`;
             }
         }
     });
@@ -349,7 +589,9 @@
         measurePoints = [];
         isFinished = false;
         measurePolyline = L.polyline([], { color: '#c2b280', weight: 3, dashArray: '5, 10' }).addTo(measureLayer);
-        document.getElementById('measure-result').innerHTML = "Выберите инструмент и кликните на карту";
+        const mr = document.getElementById('measure-result');
+        mr.textContent = t('measure_hint');
+        mr.dataset.pristine = 'true';
         if (!activeMeasureTool) setMapLayersInteractive(true);
     }
 
@@ -428,7 +670,7 @@
         const kmlUrl = `history/${date}/step${currentStep}.kml`;
         const showStroke = document.getElementById('stroke-toggle').checked;
         document.getElementById('date-label').innerText = date;
-        document.getElementById('step-label').innerText = `ШАГ ${currentStep}`;
+        document.getElementById('step-label').innerText = t('step_prefix') + ' ' + currentStep;
         let prevUrl = null;
         if (currentStep > 1) {
             prevUrl = `history/${date}/step${currentStep - 1}.kml`;
@@ -490,11 +732,11 @@
         const active = canvas.classList.toggle('active');
         const btn = document.getElementById('draw-btn');
         if (active) {
-            btn.innerText = "Выкл."; btn.style.background = "#44ff44";
+            btn.innerText = t('disable_draw'); btn.style.background = "#44ff44";
             map.dragging.disable(); map.touchZoom.disable(); map.scrollWheelZoom.disable();
             resizeCanvas();
         } else {
-            btn.innerText = "Вкл."; btn.style.background = "";
+            btn.innerText = t('enable_draw'); btn.style.background = "";
             map.dragging.enable(); map.touchZoom.enable(); map.scrollWheelZoom.enable();
         }
     }
@@ -579,6 +821,8 @@
     }
     function toggleCheck(id) { const el = document.getElementById(id); el.checked = !el.checked; el.dispatchEvent(new Event('change')); }
 
+    // ── ИНИЦИАЛИЗАЦИЯ ─────────────────────────────────────────────────────────
+    applyLocale();
     initApp();
 </script>
 </body>
